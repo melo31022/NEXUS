@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-from providers import request_with_retry
+from providers import request_with_retry, sanitized_api_error
 from task_recovery import TaskJournal, resumable_actions
 from token_guard import compact_messages, estimate_messages_tokens
 
@@ -68,6 +68,12 @@ class ProviderRetryTests(unittest.TestCase):
         result = request_with_retry(lambda: calls.append(1) or response, sleep=lambda _: None)
         self.assertEqual(result.status_code, 401)
         self.assertEqual(len(calls), 1)
+
+    def test_api_error_redacts_credentials(self):
+        detail = sanitized_api_error(401, "api_key=secret123 bearer abc.def")
+        self.assertNotIn("secret123", detail)
+        self.assertNotIn("abc.def", detail)
+        self.assertIn("[redacted]", detail)
 
 
 if __name__ == "__main__":
