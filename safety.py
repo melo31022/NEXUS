@@ -6,6 +6,7 @@ RISKY_COMMAND_PATTERNS = (
     r"\b(shutdown|restart-computer|stop-computer|stop-process)\b",
     r"\b(reg\s+(delete|add)|remove-itemproperty|set-itemproperty|new-itemproperty|set-executionpolicy|start-process)\b",
     r"\b(diskpart|bcdedit|bootrec|takeown|icacls)\b",
+    r"\bformat(?:\s|$)",  # Harmless Format-List / Format-Table must not trigger confirmation.
     r"\b(invoke-expression|iex)\b|\b(downloadstring|downloadfile)\b",
     r"\b(invoke-webrequest|start-bitstransfer)\b",
 )
