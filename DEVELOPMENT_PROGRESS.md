@@ -23,6 +23,7 @@ Last updated: 2026-11-16
 - [x] Configure CI matrix for Ubuntu, Windows x64 and Windows ARM64 runners.
 - [x] Align DeepSeek endpoint/model defaults with its current API and preserve reasoning continuation fields for DeepSeek/OpenRouter.
 - [ ] Confirm GitHub Actions results for the current CI matrix.
+- [x] Add CI status badge and links to testing/development-status documentation in the GitHub README.
 - [ ] Run manual acceptance tests on Windows 10/11 ARM64.
 - [ ] Complete remaining Token Guard, Task Recovery, Computer Use, Vision, provider compatibility and documentation work.
 

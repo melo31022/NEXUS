@@ -1,5 +1,7 @@
 # NEXUS
 
+[![NEXUS 1.1 validation](https://github.com/melo31022/NEXUS/actions/workflows/tests.yml/badge.svg?branch=dev-1.1)](https://github.com/melo31022/NEXUS/actions/workflows/tests.yml?query=branch%3Adev-1.1)
+
 **An AI-powered computer-use agent for Windows, built with Python and cloud AI providers.**
 
 NEXUS connects to cloud-hosted AI models to interpret requests, plan tasks, and interact with Windows through local tools. Language-model inference runs in the selected cloud provider; NEXUS does not run models locally.
@@ -118,6 +120,10 @@ Vision is disabled by default. When enabled, screenshots may be sent to the sele
 
 Keep API keys in `.env`, never commit that file, and avoid running NEXUS as Administrator without a clear reason. NEXUS operates with the permissions of the current Windows account. Its safety checks are heuristic and are not a sandbox or a complete security boundary.
 
+## Testing and acceptance
+
+See [docs/TESTING.md](docs/TESTING.md) for the CI matrix, local CMD test commands, Windows desktop acceptance checklist and live-provider validation matrix. Development status is tracked in [DEVELOPMENT_PROGRESS.md](DEVELOPMENT_PROGRESS.md).
+
 ## Known Limitations and Validation
 
 - Token counts are estimates, not exact provider tokenization.
@@ -135,7 +141,8 @@ nexus/
 ├── docs/
 │   ├── PROVIDERS.md
 │   ├── TASK_RECOVERY.md
-│   └── MODELTEST.md
+│   ├── MODELTEST.md
+│   └── TESTING.md
 ├── agent.py
 ├── model_test.py
 ├── catalog.py
@@ -155,6 +162,7 @@ nexus/
 ├── README.pt-BR.md
 ├── ROADMAP.md
 ├── CHANGELOG.md
+├── DEVELOPMENT_PROGRESS.md
 └── VERSION
 ```
 

@@ -107,6 +107,6 @@ O NEXUS grava checkpoints JSON em `nexus_tasks/`. Use `/tasks` para consultar o 
 
 ## Testes e limitações
 
-A workflow do GitHub Actions está configurada para executar testes unitários e compilação em Ubuntu, Windows x64 e Windows ARM64 (`windows-11-arm`). Isso valida a suíte automatizada nesses ambientes, mas não substitui testes de aceitação com mouse, teclado, janelas e telas reais. Autenticação, catálogo, tool calling e visão ainda precisam ser validados com cada conta/provedor.
+A workflow do GitHub Actions está configurada para executar testes unitários e compilação em Ubuntu, Windows x64 e Windows ARM64 (`windows-11-arm`). Isso valida a suíte automatizada nesses ambientes, mas não substitui testes de aceitação com mouse, teclado, janelas e telas reais. Autenticação, catálogo, tool calling e visão ainda precisam ser validados com cada conta/provedor. Consulte [docs/TESTING.md](docs/TESTING.md) para o checklist de validação.
 
 O NEXUS prioriza segurança, transparência, baixo consumo local e controle do usuário.
