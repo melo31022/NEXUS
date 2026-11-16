@@ -22,6 +22,8 @@ def _crypt(data: bytes, *, decrypt: bool) -> bytes:
 
     crypt32 = ctypes.WinDLL("crypt32", use_last_error=True)
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.LocalFree.argtypes = [ctypes.c_void_p]
+    kernel32.LocalFree.restype = ctypes.c_void_p
     source = ctypes.create_string_buffer(data)
     source_blob = DataBlob(len(data), ctypes.cast(source, ctypes.POINTER(ctypes.c_ubyte)))
     output_blob = DataBlob()
