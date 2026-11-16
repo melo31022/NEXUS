@@ -78,10 +78,10 @@ PROVIDERS: dict[str, ProviderConfig] = {
         vision_models=("qwen/qwen3.8-27b",),
         api_key_env="GROQ_API_KEY",
     ),
-    "openrouter": ProviderConfig(name="openrouter", label="OpenRouter", base_url="https://openrouter.ai/api/v1", api_key=_env("OPENROUTER_API_KEY"), default_model=_env("OPENROUTER_MODEL", "openai/gpt-4o-mini"), api_key_env="OPENROUTER_API_KEY"),
-    "cerebras": ProviderConfig(name="cerebras", label="Cerebras Cloud", base_url="https://api.cerebras.ai/v1", api_key=_env("CEREBRAS_API_KEY"), default_model=_env("CEREBRAS_MODEL", "llama-3.3-70b"), api_key_env="CEREBRAS_API_KEY"),
-    "together": ProviderConfig(name="together", label="Together AI", base_url="https://api.together.xyz/v1", api_key=_env("TOGETHER_API_KEY"), default_model=_env("TOGETHER_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo"), api_key_env="TOGETHER_API_KEY"),
-    "deepseek": ProviderConfig(name="deepseek", label="DeepSeek", base_url="https://api.deepseek.com/v1", api_key=_env("DEEPSEEK_API_KEY"), default_model=_env("DEEPSEEK_MODEL", "deepseek-chat"), api_key_env="DEEPSEEK_API_KEY"),
+    "openrouter": ProviderConfig(name="openrouter", label="OpenRouter", base_url="https://openrouter.ai/api/v1", api_key=_env("OPENROUTER_API_KEY"), default_model=_env("OPENROUTER_MODEL", "openai/gpt-4o-mini"), api_key_env="OPENROUTER_API_KEY", vision_models=tuple(x.strip() for x in _env("OPENROUTER_VISION_MODELS").split(",") if x.strip())),
+    "cerebras": ProviderConfig(name="cerebras", label="Cerebras Cloud", base_url="https://api.cerebras.ai/v1", api_key=_env("CEREBRAS_API_KEY"), default_model=_env("CEREBRAS_MODEL", "llama-3.3-70b"), api_key_env="CEREBRAS_API_KEY", vision_models=tuple(x.strip() for x in _env("CEREBRAS_VISION_MODELS").split(",") if x.strip())),
+    "together": ProviderConfig(name="together", label="Together AI", base_url="https://api.together.xyz/v1", api_key=_env("TOGETHER_API_KEY"), default_model=_env("TOGETHER_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo"), api_key_env="TOGETHER_API_KEY", vision_models=tuple(x.strip() for x in _env("TOGETHER_VISION_MODELS").split(",") if x.strip())),
+    "deepseek": ProviderConfig(name="deepseek", label="DeepSeek", base_url="https://api.deepseek.com/v1", api_key=_env("DEEPSEEK_API_KEY"), default_model=_env("DEEPSEEK_MODEL", "deepseek-chat"), api_key_env="DEEPSEEK_API_KEY", vision_models=tuple(x.strip() for x in _env("DEEPSEEK_VISION_MODELS").split(",") if x.strip())),
 }
 
 DEFAULT_PROVIDER = _env("NEXUS_PROVIDER", "ollama").lower()
