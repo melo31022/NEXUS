@@ -4,7 +4,7 @@ This document describes the development direction of NEXUS.
 
 The roadmap is subject to change as the project evolves.
 
-## Current Version: 1.0
+## Current Version: 1.1.0
 
 NEXUS 1.0 establishes the initial architecture for a Windows computer-use agent powered by cloud AI providers.
 
@@ -35,26 +35,26 @@ The main objective of NEXUS 1.1 is to improve reliability, context management, a
 
 Improve token consumption and provider rate-limit handling.
 
-- [ ] Estimate token usage before sending requests.
+- [x] Estimate token usage before sending requests (conservative character-based estimate).
 - [ ] Monitor provider token and request limits.
-- [ ] Implement intelligent conversation compression.
-- [ ] Preserve recent messages and important task state.
-- [ ] Configure maximum output tokens.
-- [ ] Limit tool calls and execution steps.
+- [x] Implement bounded conversation compaction at user-turn boundaries.
+- [x] Preserve system instructions and recent conversation turns.
+- [x] Configure maximum output tokens.
+- [x] Limit tool calls per step and retain the overall step cap.
 - [ ] Compress large PowerShell outputs.
 - [ ] Reduce unnecessary context sent to providers.
-- [ ] Respect Retry-After and provider retry instructions.
-- [ ] Implement controlled retry handling for HTTP 429 errors.
+- [x] Respect Retry-After for transient HTTP errors.
+- [x] Implement bounded retries for 429 and selected transient HTTP statuses.
 - [ ] Display estimated token usage.
 
 ### 2. Task Recovery
 
 Improve continuity when tasks are interrupted.
 
-- [ ] Implement task checkpoints.
-- [ ] Track completed and pending operations.
-- [ ] Preserve task state during interruptions.
-- [ ] Resume interrupted tasks when possible.
+- [x] Implement persistent atomic task checkpoints.
+- [x] Record action outcomes and step state.
+- [x] Persist interrupted/failed task state.
+- [ ] Add explicit, user-reviewed continuation of interrupted tasks (no automatic action replay).
 - [ ] Avoid repeating completed operations.
 - [ ] Improve execution reports.
 - [ ] Preserve workspace information during recovery.
@@ -89,7 +89,7 @@ Improve execution reliability and operational safety.
 
 - [ ] Improve destructive-operation detection.
 - [ ] Expand confirmation mechanisms.
-- [ ] Improve provider error handling.
+- [x] Add bounded transient retries and sanitized error summaries.
 - [ ] Prevent excessive tool-call loops.
 - [ ] Improve session management.
 - [ ] Improve execution verification.
