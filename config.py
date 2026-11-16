@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+
+from secure_store import load_settings as load_secure_settings, save_settings as save_secure_settings
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -84,7 +86,28 @@ PROVIDERS: dict[str, ProviderConfig] = {
     "deepseek": ProviderConfig(name="deepseek", label="DeepSeek", base_url="https://api.deepseek.com/v1", api_key=_env("DEEPSEEK_API_KEY"), default_model=_env("DEEPSEEK_MODEL", "deepseek-chat"), api_key_env="DEEPSEEK_API_KEY", vision_models=tuple(x.strip() for x in _env("DEEPSEEK_VISION_MODELS").split(",") if x.strip())),
 }
 
-DEFAULT_PROVIDER = _env("NEXUS_PROVIDER", "ollama").lower()
+# Secure settings override .env values. API keys are protected with Windows DPAPI.
+SECURE_STORE_ERROR = ""
+try:
+    _SAVED_SETTINGS = load_secure_settings()
+except RuntimeError as exc:
+    _SAVED_SETTINGS = {}
+    SECURE_STORE_ERROR = str(exc)
+
+_saved_providers = _SAVED_SETTINGS.get("providers", {})
+if isinstance(_saved_providers, dict):
+    for _name, _values in _saved_providers.items():
+        if _name not in PROVIDERS or not isinstance(_values, dict):
+            continue
+        _current = PROVIDERS[_name]
+        PROVIDERS[_name] = replace(
+            _current,
+            api_key=str(_values.get("api_key", _current.api_key) or ""),
+            default_model=str(_values.get("model", _current.default_model) or _current.default_model),
+            base_url=str(_values.get("base_url", _current.base_url) or _current.base_url),
+        )
+
+DEFAULT_PROVIDER = str(_SAVED_SETTINGS.get("default_provider") or _env("NEXUS_PROVIDER", "ollama")).lower()
 if DEFAULT_PROVIDER not in PROVIDERS:
     # Older RC2 .env files may still say "remote". Fall back to a hosted
     # provider instead of accidentally trying localhost.
@@ -112,3 +135,61 @@ def get_provider(name: str) -> ProviderConfig:
     except KeyError as exc:
         available = ", ".join(sorted(PROVIDERS))
         raise ValueError(f"Provedor em nuvem desconhecido: {name}. Disponíveis: {available}.") from exc
+
+_UNSET = object()
+
+
+def save_provider_settings(
+    name: str,
+    *,
+    api_key: str | object = _UNSET,
+    model: str | object = _UNSET,
+    base_url: str | object = _UNSET,
+) -> ProviderConfig:
+    """Persist provider settings securely and refresh the live configuration."""
+    provider_name = name.strip().lower()
+    if provider_name not in PROVIDERS:
+        raise ValueError(f"Provedor desconhecido: {provider_name}")
+    current = PROVIDERS[provider_name]
+    values = _SAVED_SETTINGS.setdefault("providers", {}).setdefault(provider_name, {})
+    if api_key is not _UNSET:
+        key = str(api_key).strip()
+        if key:
+            values["api_key"] = key
+            if current.api_key_env:
+                os.environ[current.api_key_env] = key
+        else:
+            values.pop("api_key", None)
+            if current.api_key_env:
+                os.environ.pop(current.api_key_env, None)
+    if model is not _UNSET:
+        selected_model = str(model).strip()
+        if not selected_model:
+            raise ValueError("O ID do modelo não pode ficar vazio.")
+        values["model"] = selected_model
+    if base_url is not _UNSET:
+        endpoint = str(base_url).strip().rstrip("/")
+        if not endpoint.startswith("https://") or len(endpoint) > 300:
+            raise ValueError("O endpoint precisa ser uma URL HTTPS válida.")
+        values["base_url"] = endpoint
+    if not values:
+        _SAVED_SETTINGS.get("providers", {}).pop(provider_name, None)
+    save_secure_settings(_SAVED_SETTINGS)
+    updated = replace(
+        current,
+        api_key=(str(values.get("api_key", current.api_key) or "") if api_key is _UNSET else str(api_key).strip()),
+        default_model=str(values.get("model", current.default_model)),
+        base_url=str(values.get("base_url", current.base_url)),
+    )
+    PROVIDERS[provider_name] = updated
+    return updated
+
+
+def save_default_provider(name: str) -> None:
+    global DEFAULT_PROVIDER
+    provider_name = name.strip().lower()
+    if provider_name not in PROVIDERS:
+        raise ValueError(f"Provedor desconhecido: {provider_name}")
+    _SAVED_SETTINGS["default_provider"] = provider_name
+    save_secure_settings(_SAVED_SETTINGS)
+    DEFAULT_PROVIDER = provider_name
