@@ -52,13 +52,11 @@ class TaskJournal:
         self.save()
 
     def record_action(self, name: str, arguments: dict[str, Any], result: str, *, success: bool) -> None:
-        safe_args = dict(arguments)
-        for key in ("text", "content", "command", "password", "api_key", "token"):
-            if key in safe_args:
-                safe_args[key] = f"[redacted; {len(str(safe_args[key]))} chars]"
-        safe_result = str(result)[:1500]
-        safe_result = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._~+/-]+=*", r"\1[redacted]", safe_result)
-        safe_result = re.sub(r"(?i)((?:api[_ -]?key|token|password|secret)\s*[:=]\s*)[^\s,;]+", r"\1[redacted]", safe_result)
+        if name in {"type_text", "write_text_file", "read_text_file", "powershell_execute"}:
+            safe_args = {"fields": sorted(str(key)[:80] for key in arguments), "values_omitted": True}
+        else:
+            safe_args = redact_sensitive_dict(arguments)
+        safe_result = redact_sensitive_text(str(result))[:1500]
         self.state["actions"].append({
             "name": str(name)[:100], "arguments": safe_args,
             "result": safe_result, "success": bool(success),
@@ -95,6 +93,24 @@ def redact_sensitive_text(value: str) -> str:
     text = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._~+/-]+=*", r"\1[redacted]", text)
     text = re.sub(r"""(?i)(["']?(?:api[_ -]?key|token|password|secret)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)""", r"\1[redacted]", text)
     return re.sub(r"(?i)\b(?:gsk_|sk-or-v1-|sk-)[A-Za-z0-9_-]{20,}", "[redacted]", text)
+
+
+def redact_sensitive_dict(value: Any) -> Any:
+    """Recursively redact secret-bearing keys and token-like values before journaling."""
+    if isinstance(value, dict):
+        cleaned: dict[str, Any] = {}
+        for key, item in value.items():
+            name = str(key)
+            if re.search(r"(?i)(?:api[_ -]?key|token|password|secret|credential|authorization|text|content|command)", name):
+                cleaned[name] = f"[redacted; {len(str(item))} chars]"
+            else:
+                cleaned[name] = redact_sensitive_dict(item)
+        return cleaned
+    if isinstance(value, list):
+        return [redact_sensitive_dict(item) for item in value]
+    if isinstance(value, str):
+        return redact_sensitive_text(value)
+    return value
 
 
 def resumable_actions(state: dict[str, Any]) -> list[dict[str, Any]]:

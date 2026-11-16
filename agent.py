@@ -385,14 +385,13 @@ class NexusAgent:
                         arguments = {}
                         result: Any = f"Argumentos inválidos para {name}: {exc}"
                     else:
-                        if name == "type_text":
-                            args_display = f"text=[oculto; {len(str(arguments.get('text', '')))} caracteres]"
-                        elif name == "powershell_execute":
-                            args_display = "command=[oculto por segurança]"
+                        if name in {"powershell_execute", "type_text", "write_text_file", "read_text_file"}:
+                            fields = ", ".join(str(key) for key in arguments) if isinstance(arguments, dict) else "desconhecidos"
+                            args_display = f"[argumentos ocultos; campos: {fields}]"
                         else:
                             args_display = json.dumps(arguments, ensure_ascii=False)
                         console.print(Text(f"  → {name} {args_display[:250]}"))
-                        log_args = "[oculto]" if name in {"type_text", "powershell_execute"} else args_display
+                        log_args = args_display
                         self._write_log(f"[Tool] {name}({log_args})")
                         try:
                             result = self.execute_tool(name, arguments)
@@ -407,8 +406,10 @@ class NexusAgent:
                             result_text += "\nDimensões reais da imagem: " + json.dumps(result["image_dimensions"], ensure_ascii=False)
                     else:
                         result_text = str(result)
+                        if name == "powershell_execute":
+                            result_text = redact_sensitive_text(result_text)
                     console.print(Text(f"    ↳ {result_text[:700]}"))
-                    private_output = name in {"read_text_file", "powershell_execute"}
+                    private_output = name in {"read_text_file", "powershell_execute", "write_text_file", "screenshot"}
                     logged_result = f"[saída omitida por privacidade; {len(result_text)} caracteres]" if private_output else redact_sensitive_text(result_text)
                     self._write_log(f"[Result] {logged_result}")
                     lowered_result = result_text.strip().lower()

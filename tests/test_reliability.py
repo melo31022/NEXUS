@@ -8,7 +8,7 @@ import requests
 
 import config
 from providers import request_with_retry, sanitized_api_error
-from task_recovery import TaskJournal, resumable_actions, redact_sensitive_text
+from task_recovery import TaskJournal, resumable_actions, redact_sensitive_text, redact_sensitive_dict
 from token_guard import compact_messages, estimate_messages_tokens
 
 
@@ -45,6 +45,29 @@ class TokenGuardTests(unittest.TestCase):
 
 
 class TaskRecoveryTests(unittest.TestCase):
+    def test_recursive_argument_redaction_handles_nested_credentials(self):
+        cleaned = redact_sensitive_dict({
+            "options": {"OPENROUTER_API_KEY": "sk-or-v1-012345678901234567890123"},
+            "note": "Bearer gsk_012345678901234567890123456789",
+        })
+        self.assertNotIn("sk-or-v1-012345678901234567890123", str(cleaned))
+        self.assertNotIn("gsk_012345678901234567890123456789", str(cleaned))
+        self.assertIn("[redacted", str(cleaned))
+
+    def test_journal_omits_sensitive_tool_argument_values(self):
+        with tempfile.TemporaryDirectory() as temp:
+            journal = TaskJournal("privacy test", root=Path(temp))
+            journal.record_action(
+                "write_text_file",
+                {"path": "C:/private/notes.txt", "text": "private note body"},
+                "Arquivo salvo em C:/private/notes.txt",
+                success=True,
+            )
+            action = journal.state["actions"][-1]
+            self.assertNotIn("private note body", str(action))
+            self.assertNotIn("C:/private/notes.txt", str(action))
+            self.assertTrue(action["arguments"]["values_omitted"])
+
     def test_resumed_journal_links_to_parent_checkpoint(self):
         with tempfile.TemporaryDirectory() as temp:
             journal = TaskJournal("resume task", root=Path(temp), parent_task_id="parent-task-123")
