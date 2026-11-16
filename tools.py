@@ -1,0 +1,285 @@
+"""Windows desktop tools used by the NEXUS operator agent."""
+from __future__ import annotations
+
+import base64
+import os
+import re
+import shutil
+import subprocess
+import time
+from pathlib import Path
+from typing import Any
+
+import pyautogui
+import pygetwindow as gw
+
+try:
+    import pyperclip
+except ImportError:  # Clipboard paste is optional; ASCII typing still works.
+    pyperclip = None
+
+from config import BASE_DIR
+from text_utils import normalize_text_content
+
+pyautogui.FAILSAFE = True
+pyautogui.PAUSE = 0.15
+
+SCREENSHOT_DIR = BASE_DIR / "nexus_screenshots"
+SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+class DesktopTools:
+    """Narrow, validated wrappers around PyAutoGUI and Windows process APIs."""
+
+    @staticmethod
+    def _check_coordinates(x: int, y: int) -> tuple[int, int]:
+        width, height = pyautogui.size()
+        x, y = int(x), int(y)
+        if not (0 <= x < width and 0 <= y < height):
+            raise ValueError(f"Coordenadas fora da tela ({width}x{height}): {x}, {y}")
+        return x, y
+
+    @staticmethod
+    def mouse_move(x: int, y: int) -> str:
+        x, y = DesktopTools._check_coordinates(x, y)
+        pyautogui.moveTo(x, y, duration=0.2)
+        return f"Cursor movido para ({x}, {y})."
+
+    @staticmethod
+    def left_click(x: int, y: int) -> str:
+        x, y = DesktopTools._check_coordinates(x, y)
+        pyautogui.click(x, y, button="left")
+        return f"Clique esquerdo em ({x}, {y})."
+
+    @staticmethod
+    def type_text(text: str) -> str:
+        if not isinstance(text, str):
+            raise TypeError("O texto precisa ser uma string.")
+        if len(text) > 12000:
+            raise ValueError("Texto muito longo (limite: 12.000 caracteres por chamada).")
+        if pyperclip and ("\n" in text or any(ord(char) > 127 for char in text)):
+            try:
+                pyperclip.copy(text)
+            except Exception as exc:
+                raise RuntimeError("Não foi possível acessar a área de transferência para digitar texto Unicode/multilinha.") from exc
+            pyautogui.hotkey("ctrl", "v")
+        else:
+            pyautogui.write(text, interval=0.01)
+        return f"Texto enviado ao campo ativo ({len(text)} caracteres)."
+
+    @staticmethod
+    def press_key(key: str) -> str:
+        key = str(key).strip().lower()
+        if key not in pyautogui.KEYBOARD_KEYS:
+            raise ValueError(f"Tecla não reconhecida pelo PyAutoGUI: {key}")
+        pyautogui.press(key)
+        return f"Tecla pressionada: {key}."
+
+    @staticmethod
+    def key_combination(keys: list[str]) -> str:
+        if not isinstance(keys, list) or not 1 <= len(keys) <= 5:
+            raise ValueError("Informe uma lista com 1 a 5 teclas.")
+        normalized = [str(key).strip().lower() for key in keys]
+        unknown = [key for key in normalized if key not in pyautogui.KEYBOARD_KEYS]
+        if unknown:
+            raise ValueError(f"Teclas não reconhecidas: {', '.join(unknown)}")
+        pyautogui.hotkey(*normalized)
+        return f"Combinação pressionada: {' + '.join(normalized)}."
+
+    @staticmethod
+    def _desktop_directory() -> Path:
+        """Resolve the actual Windows Desktop folder, including redirected folders."""
+        if os.name == "nt":
+            try:
+                import ctypes
+                from ctypes import wintypes
+                path = ctypes.create_unicode_buffer(wintypes.MAX_PATH)
+                result = ctypes.windll.shell32.SHGetFolderPathW(None, 0x0010, None, 0, path)
+                if result == 0 and path.value:
+                    return Path(path.value)
+            except Exception:
+                pass
+        return Path.home() / "Desktop"
+
+    @staticmethod
+    def write_text_file(filename: str, content: str, directory: str | None = None) -> str:
+        """Create a new UTF-8 text file in the workspace (or Desktop) without overwriting."""
+        if os.name != "nt":
+            raise OSError("A criação de arquivos na Área de Trabalho está disponível nesta versão para Windows.")
+        raw_name = str(filename or "").strip()
+        if not raw_name or len(raw_name) > 120 or Path(raw_name).name != raw_name or any(ch in raw_name for ch in '<>:\"/\\|?*'):
+            raise ValueError("Informe apenas um nome de arquivo válido, sem caminhos ou caracteres especiais.")
+        if not raw_name.lower().endswith(".txt"):
+            raw_name += ".txt"
+        if not isinstance(content, str):
+            raise TypeError("O conteúdo do arquivo precisa ser texto.")
+        if len(content) > 100_000:
+            raise ValueError("O conteúdo excede o limite de 100.000 caracteres.")
+        content = normalize_text_content(content)
+        if directory:
+            target_dir = Path(directory).expanduser().resolve()
+            if not target_dir.exists() or not target_dir.is_dir():
+                raise NotADirectoryError(f"Workspace não existe ou não é uma pasta: {target_dir}")
+        else:
+            target_dir = DesktopTools._desktop_directory()
+            target_dir.mkdir(parents=True, exist_ok=True)
+        destination = target_dir / raw_name
+        if destination.exists():
+            raise FileExistsError(f"O arquivo {raw_name} já existe. Não foi sobrescrito.")
+        with destination.open("x", encoding="utf-8-sig", newline="") as handle:
+            handle.write(content.replace("\r\n", "\n").replace("\r", "\n").replace("\n", os.linesep))
+        return f"Arquivo criado em: {destination} ({len(content)} caracteres)."
+
+    @staticmethod
+    def screen_info() -> dict[str, Any]:
+        """Return measured display dimensions and foreground-window metadata."""
+        width, height = pyautogui.size()
+        result: dict[str, Any] = {
+            "screen": {"width": int(width), "height": int(height)},
+            "active_window": None,
+            "source": "PyAutoGUI + Windows API",
+        }
+        if os.name != "nt":
+            result["source"] = "PyAutoGUI (non-Windows)"
+            return result
+        try:
+            import ctypes
+            from ctypes import wintypes
+            user32 = ctypes.windll.user32
+            user32.GetForegroundWindow.restype = wintypes.HWND
+            user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+            user32.GetWindowTextLengthW.restype = ctypes.c_int
+            user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+            user32.GetWindowTextW.restype = ctypes.c_int
+            user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+            user32.GetWindowRect.restype = wintypes.BOOL
+            user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+            user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+            hwnd = user32.GetForegroundWindow()
+            if hwnd:
+                length = user32.GetWindowTextLengthW(hwnd)
+                title_buffer = ctypes.create_unicode_buffer(max(1, length + 1))
+                user32.GetWindowTextW(hwnd, title_buffer, len(title_buffer))
+                rect = wintypes.RECT()
+                has_rect = bool(user32.GetWindowRect(hwnd, ctypes.byref(rect)))
+                process_id = wintypes.DWORD()
+                user32.GetWindowThreadProcessId(hwnd, ctypes.byref(process_id))
+                result["active_window"] = {
+                    "title": title_buffer.value or "(sem título)",
+                    "process_id": int(process_id.value),
+                    "rect": ({"left": rect.left, "top": rect.top, "right": rect.right,
+                              "bottom": rect.bottom, "width": rect.right - rect.left,
+                              "height": rect.bottom - rect.top} if has_rect else None),
+                }
+        except Exception as exc:
+            result["windows_api_warning"] = f"Não foi possível consultar a janela ativa: {type(exc).__name__}: {exc}"
+        return result
+
+    @staticmethod
+    def active_window() -> dict[str, Any]:
+        info = DesktopTools.screen_info()
+        return {"active_window": info.get("active_window"), "screen": info.get("screen"),
+                "source": info.get("source"), "windows_api_warning": info.get("windows_api_warning")}
+
+    @staticmethod
+    def screenshot(filename: str = "", include_image: bool = False) -> dict[str, Any]:
+        requested = Path(str(filename)).name if filename else f"screen_{time.time_ns()}.png"
+        requested = re.sub(r"[^A-Za-z0-9._-]", "_", requested)
+        if not requested.lower().endswith((".png", ".jpg", ".jpeg")):
+            requested += ".png"
+        if requested in {".", ".."}:
+            requested = f"screen_{time.time_ns()}.png"
+        destination = SCREENSHOT_DIR / requested
+        image = pyautogui.screenshot()
+        image.save(destination)
+        metadata = DesktopTools.screen_info()
+        result: dict[str, Any] = {
+            "path": str(destination),
+            "message": f"Captura salva em {destination.relative_to(BASE_DIR)}.",
+            "metadata": metadata,
+            "image_dimensions": {"width": int(image.width), "height": int(image.height)},
+        }
+        if include_image:
+            preview = image.convert("RGB")
+            preview.thumbnail((1440, 900))
+            from io import BytesIO
+            buffer = BytesIO()
+            preview.save(buffer, format="JPEG", quality=78, optimize=True)
+            encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+            result["image_data_url"] = f"data:image/jpeg;base64,{encoded}"
+        return result
+
+    @staticmethod
+    def list_windows() -> str:
+        titles: list[str] = []
+        for window in gw.getAllWindows():
+            title = (window.title or "").strip()
+            if title and title not in titles:
+                titles.append(title)
+        if not titles:
+            return "Nenhuma janela com título foi encontrada."
+        return "Janelas abertas (até 25):\n" + "\n".join(f"- {title}" for title in titles[:25])
+
+    @staticmethod
+    def open_application(path: str) -> str:
+        target = str(path).strip().strip('"')
+        if not target:
+            raise ValueError("Informe o nome ou caminho do aplicativo.")
+        if len(target) > 500:
+            raise ValueError("Caminho muito longo.")
+        aliases = {
+            "notepad": "notepad.exe",
+            "notepad.exe": "notepad.exe",
+            "calculator": "calc.exe",
+            "calc": "calc.exe",
+            "calc.exe": "calc.exe",
+            "explorer": "explorer.exe",
+            "explorer.exe": "explorer.exe",
+        }
+        target = aliases.get(target.lower(), target)
+        if os.name != "nt":
+            raise OSError("A abertura de aplicativos desta ferramenta está disponível no Windows.")
+        # Do not invoke a shell: treat the supplied value as one executable/path.
+        executable = shutil.which(target) or target
+        if not Path(executable).exists() and not shutil.which(executable):
+            raise FileNotFoundError(f"Aplicativo/caminho não encontrado: {target}")
+        subprocess.Popen([executable], close_fds=True)
+        return f"Solicitação de abertura enviada: {target}. Verifique a janela para confirmar."
+
+    @staticmethod
+    def powershell_execute(command: str) -> str:
+        command = str(command).strip()
+        if not command:
+            raise ValueError("O comando PowerShell está vazio.")
+        if len(command) > 8000:
+            raise ValueError("Comando muito longo (limite: 8.000 caracteres).")
+        if os.name != "nt":
+            raise OSError("A execução do PowerShell está disponível somente no Windows.")
+        powershell = shutil.which("pwsh.exe") or shutil.which("powershell.exe")
+        if not powershell:
+            system_root = os.environ.get("SystemRoot", r"C:\Windows")
+            candidate = Path(system_root) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+            if candidate.is_file():
+                powershell = str(candidate)
+        if not powershell:
+            raise FileNotFoundError("PowerShell não encontrado (pwsh.exe/powershell.exe).")
+        try:
+            completed = subprocess.run(
+                [powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30,
+                check=False,
+                shell=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise TimeoutError("O comando excedeu o limite de 30 segundos.") from exc
+        stdout = (completed.stdout or "").strip()
+        stderr = (completed.stderr or "").strip()
+        output_parts = [part for part in (stdout, stderr) if part]
+        output = "\n[stderr]\n".join(output_parts) if output_parts else "Comando concluído sem saída textual."
+        if completed.returncode != 0:
+            return f"PowerShell retornou código {completed.returncode}.\n{output[:6000]}"
+        return f"PowerShell concluído (código 0).\n{output[:6000]}"
