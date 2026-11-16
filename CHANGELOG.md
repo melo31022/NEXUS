@@ -1,6 +1,29 @@
 # Changelog
 
+## 1.1.0 — 2026-11-16
+
+### Added
+- Lightweight Token Guard with conservative token estimation, history compaction, configurable context/output budgets, and per-step tool-call limits.
+- Persistent task journals with atomic checkpoints, progress/action records, and a `/tasks` history command.
+- Safe recovery policy: uncertain desktop actions are never replayed automatically; only read-only actions are marked retry-safe for review.
+- Bounded transient-request retries with Retry-After support and sanitized HTTP error details.
+- Additional cloud provider configurations: OpenRouter, Cerebras, Together AI, and DeepSeek, alongside Groq Cloud and Ollama Cloud.
+- Regression tests for token budgeting, checkpoint persistence/redaction, and provider retry behavior.
+- New runtime settings in `.env.example` for token budgets and tool-call limits.
+
+### Improved
+- API-key environment variable names are now provider-configured instead of hard-coded for only Groq and Ollama.
+- Task checkpoint arguments/results redact common credential fields.
+- Terminal status and version branding updated to 1.1.
+
+### Validation status
+- Automated tests are included but have not yet been executed in a Windows ARM64 environment.
+- Live authentication, model catalog, tool calling, and vision compatibility for each provider remain provider/model-specific acceptance tests.
+- Windows desktop automation and screenshots require manual validation on Windows.
+
 ## 1.0.0 — 2026-11-15
+
+
 
 ### Added
 - Automatic interface-language detection from Windows/user locale.
