@@ -50,9 +50,12 @@ class TaskJournal:
         for key in ("text", "content", "command", "password", "api_key", "token"):
             if key in safe_args:
                 safe_args[key] = f"[redacted; {len(str(safe_args[key]))} chars]"
+        safe_result = str(result)[:1500]
+        safe_result = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._~+/-]+=*", r"\1[redacted]", safe_result)
+        safe_result = re.sub(r"(?i)((?:api[_ -]?key|token|password|secret)\s*[:=]\s*)[^\s,;]+", r"\1[redacted]", safe_result)
         self.state["actions"].append({
             "name": str(name)[:100], "arguments": safe_args,
-            "result": str(result)[:1500], "success": bool(success),
+            "result": safe_result, "success": bool(success),
             "retry_safe": name in SAFE_TO_RETRY, "completed_at": self._now(),
         })
         self.save()
