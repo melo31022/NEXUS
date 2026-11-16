@@ -52,7 +52,7 @@ def detect_language(preference: str | None = None) -> str:
 
 TRANSLATIONS = {
     "pt": {
-        "welcome": "Bem-vindo ao NEXUS 1.0",
+        "welcome": "Bem-vindo ao NEXUS 1.1",
         "tagline": "Agente de controle do computador para Windows",
         "subtitle": "Pesquisar • Planejar • Operar • Verificar",
         "getting_started": "Primeiros passos",
@@ -107,7 +107,7 @@ TRANSLATIONS = {
         "model_column": "ID do modelo", "number_column": "Nº",
     },
     "en": {
-        "welcome": "Welcome to NEXUS 1.0",
+        "welcome": "Welcome to NEXUS 1.1",
         "tagline": "Windows computer-use agent",
         "subtitle": "Research • Plan • Operate • Verify",
         "getting_started": "Getting started",

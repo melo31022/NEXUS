@@ -12,9 +12,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from config import BASE_DIR, MAX_STEPS_PER_TASK, REQUEST_TIMEOUT, ProviderConfig
+from config import BASE_DIR, MAX_STEPS_PER_TASK, REQUEST_TIMEOUT, ProviderConfig, MAX_CONTEXT_TOKENS, MAX_OUTPUT_TOKENS, MAX_TOOL_CALLS_PER_STEP
 from tools import DesktopTools
 from safety import command_needs_confirmation
+from token_guard import compact_messages
+from providers import request_with_retry, sanitized_api_error
+from task_recovery import TaskJournal, redact_sensitive_text
 
 console = Console()
 
@@ -57,6 +60,10 @@ MODES: dict[str, dict[str, Any]] = {
 TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "mouse_move", "description": "Move o cursor para coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
     {"type": "function", "function": {"name": "left_click", "description": "Executa um clique esquerdo em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "right_click", "description": "Executa um clique direito em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "double_click", "description": "Executa um duplo clique esquerdo em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "scroll", "description": "Rola a página em até 20 linhas; x e y opcionais definem a posição.", "parameters": {"type": "object", "properties": {"amount": {"type": "integer"}, "x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["amount"]}}},
+    {"type": "function", "function": {"name": "activate_window", "description": "Tenta trazer para frente uma janela cujo título contenha o texto informado.", "parameters": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}}},
     {"type": "function", "function": {"name": "type_text", "description": "Digita texto no campo que estiver em foco.", "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}}},
     {"type": "function", "function": {"name": "press_key", "description": "Pressiona uma tecla, como enter, tab ou esc.", "parameters": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}}},
     {"type": "function", "function": {"name": "key_combination", "description": "Pressiona uma combinação de teclas, como ctrl+c.", "parameters": {"type": "object", "properties": {"keys": {"type": "array", "items": {"type": "string"}}}, "required": ["keys"]}}},
@@ -95,6 +102,7 @@ class NexusAgent:
         self.workspace_dir = str(Path(workspace_dir).expanduser().resolve()) if workspace_dir else None
         self.log_file = Path(log_file) if log_file else BASE_DIR / "nexus_logs" / "nexus_history.log"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+        self.task_journal = TaskJournal(goal, self.workspace_dir)
         self._write_log(
             f"\n{'=' * 72}\n[SESSION {datetime.now().isoformat(timespec='seconds')}] "
             f"mode={mode_name} provider={provider.name} model={self.model}\n{'=' * 72}"
@@ -102,7 +110,7 @@ class NexusAgent:
         system_prompt = self.agent_profile["system"] + f"\nIdioma preferencial da interface: {self.language}. Detecte o idioma natural da mensagem mais recente do usuário e responda no mesmo idioma. Se não for possível inferir (por exemplo, uma mensagem muito curta), use o idioma preferencial da interface. Se o usuário pedir explicitamente outro idioma, siga o pedido.\n"
         if mode_name == "operator":
             system_prompt += (
-                "\nFerramentas disponíveis: mouse, clique, digitação, teclado, screenshot, janelas, "
+                "\nFerramentas disponíveis: mouse, cliques esquerdo/direito/duplo, rolagem, digitação, teclado, foco de janelas, screenshot, janelas, "
                 "abertura de aplicativos, criação de arquivos de texto no workspace e PowerShell. "
                 "Para criar arquivos .txt, use sempre write_text_file; não use PowerShell ou Notepad para gravar o conteúdo. "
                 "Se criar ou identificar a pasta principal de um projeto, use set_workspace com o caminho absoluto antes de criar os arquivos nela. "
@@ -141,17 +149,23 @@ class NexusAgent:
 
     def call_ai(self) -> dict[str, Any]:
         if self.provider.requires_api_key and not self.provider.api_key:
-            key_name = {"groq": "GROQ_API_KEY", "ollama": "OLLAMA_API_KEY"}[self.provider.name]
+            key_name = self.provider.api_key_env or f"{self.provider.name.upper()}_API_KEY"
             raise RuntimeError(f"Chave ausente. Configure {key_name} no arquivo .env ou nas variáveis do Windows.")
         headers = {"Content-Type": "application/json"}
         if self.provider.api_key:
             headers["Authorization"] = f"Bearer {self.provider.api_key}"
+        self.messages, estimated_tokens, compacted = compact_messages(
+            self.messages, budget=max(1000, MAX_CONTEXT_TOKENS - MAX_OUTPUT_TOKENS),
+            tool_schema=TOOLS_SCHEMA if self.agent_profile["tools"] else None,
+        )
+        if compacted:
+            self._write_log(f"[TokenGuard] Histórico compactado; estimativa pré-envio: {estimated_tokens} tokens.")
+        console.print(f"[dim]Token Guard: estimativa ~{estimated_tokens} tokens[/dim]")
         payload: dict[str, Any] = {
-            "model": self.model,
-            "messages": self.messages,
-            "temperature": 0.2,
+            "model": self.model, "messages": self.messages,
+            "temperature": 0.2, "max_tokens": MAX_OUTPUT_TOKENS,
         }
-        if self.agent_profile["tools"]:
+        if self.agent_profile["tools"] and self.provider.supports_tools:
             payload["tools"] = TOOLS_SCHEMA
             # Ollama Cloud's OpenAI-compatible endpoint supports `tools`, but
             # documents `tool_choice` as unsupported. Groq accepts `auto`.
@@ -159,14 +173,13 @@ class NexusAgent:
                 payload["tool_choice"] = "auto"
         url = self.provider.normalized_base_url() + "/chat/completions"
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=(15, REQUEST_TIMEOUT))
+            response = request_with_retry(lambda: requests.post(url, headers=headers, json=payload, timeout=(15, REQUEST_TIMEOUT)), retries=3)
         except requests.Timeout as exc:
             raise RuntimeError(f"A API não respondeu dentro de {REQUEST_TIMEOUT} segundos.") from exc
         except requests.RequestException as exc:
-            raise RuntimeError(f"Não foi possível conectar ao provedor: {exc}") from exc
+            raise RuntimeError(f"Não foi possível conectar ao provedor: {type(exc).__name__}.") from exc
         if not response.ok:
-            detail = response.text[:1500]
-            raise RuntimeError(f"Erro da API ({response.status_code}): {detail}")
+            raise RuntimeError(sanitized_api_error(response.status_code, response.text))
         try:
             data = response.json()
         except ValueError as exc:
@@ -193,6 +206,7 @@ class NexusAgent:
             if not target.exists() or not target.is_dir():
                 return f"Workspace não definido: a pasta não existe ou não é um diretório: {target}"
             self.workspace_dir = str(target)
+            self.task_journal.set_workspace(self.workspace_dir)
             return f"Workspace definido para esta sessão: {target}"
         if name == "write_text_file":
             return DesktopTools.write_text_file(
@@ -217,6 +231,10 @@ class NexusAgent:
         mapping = {
             "mouse_move": DesktopTools.mouse_move,
             "left_click": DesktopTools.left_click,
+            "right_click": DesktopTools.right_click,
+            "double_click": DesktopTools.double_click,
+            "scroll": DesktopTools.scroll,
+            "activate_window": DesktopTools.activate_window,
             "type_text": DesktopTools.type_text,
             "press_key": DesktopTools.press_key,
             "key_combination": DesktopTools.key_combination,
@@ -249,6 +267,7 @@ class NexusAgent:
             border_style="cyan",
         ))
         for step in range(1, max(1, MAX_STEPS_PER_TASK) + 1):
+            self.task_journal.begin_step(step)
             started = time.monotonic()
             try:
                 with console.status(f"[bold cyan]NEXUS está analisando • etapa {step}/{MAX_STEPS_PER_TASK}[/bold cyan]", spinner="dots"):
@@ -259,6 +278,10 @@ class NexusAgent:
                     raise RuntimeError("Formato de mensagem inválido recebido da API.")
                 content = message.get("content")
                 tool_calls = message.get("tool_calls") or []
+                if len(tool_calls) > MAX_TOOL_CALLS_PER_STEP:
+                    console.print(f"[yellow]Limite de {MAX_TOOL_CALLS_PER_STEP} chamadas por etapa; excedentes adiadas.[/yellow]")
+                    tool_calls = tool_calls[:MAX_TOOL_CALLS_PER_STEP]
+                    message["tool_calls"] = tool_calls
                 # Preserve the assistant tool-call message exactly as returned by the provider.
                 assistant_message = {key: value for key, value in message.items() if key in {"role", "content", "tool_calls", "refusal"}}
                 assistant_message["role"] = "assistant"
@@ -269,6 +292,7 @@ class NexusAgent:
                     console.print(Panel(Text(str(content)), title="[bold green]NEXUS[/bold green]", border_style="green", padding=(0, 2)))
                 if not tool_calls:
                     self._write_log("[Status] Turno concluído.")
+                    self.task_journal.finish("completed", "Turno concluído sem ferramentas pendentes.")
                     return self.messages
                 pending_images: list[str] = []
                 for call in tool_calls:
@@ -304,12 +328,12 @@ class NexusAgent:
                     else:
                         result_text = str(result)
                     console.print(Text(f"    ↳ {result_text[:700]}"))
-                    self._write_log(f"[Result] {result_text}")
+                    self._write_log(f"[Result] {redact_sensitive_text(result_text)}")
+                    action_ok = not result_text.lower().startswith(("erro:", "falha", "powershell retornou código"))
+                    self.task_journal.record_action(name, arguments if isinstance(arguments, dict) else {}, result_text, success=action_ok)
                     self.messages.append({
-                        "role": "tool",
-                        "tool_call_id": call_id or f"nexus-{step}-{name}",
-                        "name": name,
-                        "content": result_text,
+                        "role": "tool", "tool_call_id": call_id or f"nexus-{step}-{name}",
+                        "name": name, "content": result_text[:6000],
                     })
                     if image_data_url:
                         pending_images.append(image_data_url)
@@ -335,13 +359,16 @@ class NexusAgent:
                     })
                 self._write_log(f"[Step] {step} tool cycle completed.")
             except KeyboardInterrupt:
+                self.task_journal.finish("interrupted", "Interrompida pelo usuário.")
                 console.print("[yellow]Tarefa interrompida pelo usuário.[/yellow]")
                 self._write_log("[Status] Interrompido pelo usuário.")
                 return self.messages
             except Exception as exc:
+                self.task_journal.finish("failed", f"{type(exc).__name__}: {exc}")
                 console.print(Panel(Text(f"{type(exc).__name__}: {exc}"), title="[bold red]Erro no NEXUS[/bold red]", border_style="red"))
                 self._write_log(f"[Error] {type(exc).__name__}: {exc}")
                 return self.messages
+        self.task_journal.finish("step_limit", "Limite de etapas atingido; revise o estado do computador antes de continuar.")
         console.print("[yellow]Limite de etapas atingido. Revise o estado do computador antes de continuar.[/yellow]")
         self._write_log("[Status] Limite de etapas atingido.")
         return self.messages

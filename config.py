@@ -40,6 +40,8 @@ class ProviderConfig:
     default_model: str
     requires_api_key: bool = True
     vision_models: tuple[str, ...] = ()
+    api_key_env: str = ""
+    supports_tools: bool = True
 
     def normalized_base_url(self) -> str:
         return self.base_url.strip().rstrip("/")
@@ -64,6 +66,7 @@ PROVIDERS: dict[str, ProviderConfig] = {
         default_model=_env("OLLAMA_MODEL", "beam"),
         requires_api_key=True,
         vision_models=tuple(x.strip() for x in _env("OLLAMA_VISION_MODELS").split(",") if x.strip()),
+        api_key_env="OLLAMA_API_KEY",
     ),
     "groq": ProviderConfig(
         name="groq",
@@ -73,7 +76,12 @@ PROVIDERS: dict[str, ProviderConfig] = {
         default_model=_env("GROQ_MODEL", "openai/gpt-oss-120b"),
         requires_api_key=True,
         vision_models=("qwen/qwen3.8-27b",),
+        api_key_env="GROQ_API_KEY",
     ),
+    "openrouter": ProviderConfig(name="openrouter", label="OpenRouter", base_url="https://openrouter.ai/api/v1", api_key=_env("OPENROUTER_API_KEY"), default_model=_env("OPENROUTER_MODEL", "openai/gpt-4o-mini"), api_key_env="OPENROUTER_API_KEY", vision_models=tuple(x.strip() for x in _env("OPENROUTER_VISION_MODELS").split(",") if x.strip())),
+    "cerebras": ProviderConfig(name="cerebras", label="Cerebras Cloud", base_url="https://api.cerebras.ai/v1", api_key=_env("CEREBRAS_API_KEY"), default_model=_env("CEREBRAS_MODEL", "llama-3.3-70b"), api_key_env="CEREBRAS_API_KEY", vision_models=tuple(x.strip() for x in _env("CEREBRAS_VISION_MODELS").split(",") if x.strip())),
+    "together": ProviderConfig(name="together", label="Together AI", base_url="https://api.together.xyz/v1", api_key=_env("TOGETHER_API_KEY"), default_model=_env("TOGETHER_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo"), api_key_env="TOGETHER_API_KEY", vision_models=tuple(x.strip() for x in _env("TOGETHER_VISION_MODELS").split(",") if x.strip())),
+    "deepseek": ProviderConfig(name="deepseek", label="DeepSeek", base_url="https://api.deepseek.com/v1", api_key=_env("DEEPSEEK_API_KEY"), default_model=_env("DEEPSEEK_MODEL", "deepseek-chat"), api_key_env="DEEPSEEK_API_KEY", vision_models=tuple(x.strip() for x in _env("DEEPSEEK_VISION_MODELS").split(",") if x.strip())),
 }
 
 DEFAULT_PROVIDER = _env("NEXUS_PROVIDER", "ollama").lower()
@@ -93,10 +101,14 @@ def _positive_int(name: str, default: int, minimum: int, maximum: int) -> int:
 
 MAX_STEPS_PER_TASK = _positive_int("NEXUS_MAX_STEPS", 18, 1, 60)
 REQUEST_TIMEOUT = _positive_int("NEXUS_REQUEST_TIMEOUT", 75, 10, 300)
+MAX_CONTEXT_TOKENS = _positive_int("NEXUS_MAX_CONTEXT_TOKENS", 16000, 2000, 200000)
+MAX_OUTPUT_TOKENS = _positive_int("NEXUS_MAX_OUTPUT_TOKENS", 2048, 128, 16000)
+MAX_TOOL_CALLS_PER_STEP = _positive_int("NEXUS_MAX_TOOL_CALLS_PER_STEP", 6, 1, 20)
 
 
 def get_provider(name: str) -> ProviderConfig:
     try:
         return PROVIDERS[name.lower()]
     except KeyError as exc:
-        raise ValueError(f"Provedor em nuvem desconhecido: {name}. Use ollama ou groq.") from exc
+        available = ", ".join(sorted(PROVIDERS))
+        raise ValueError(f"Provedor em nuvem desconhecido: {name}. Disponíveis: {available}.") from exc

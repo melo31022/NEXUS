@@ -14,13 +14,15 @@ from i18n import detect_language, language_name, tr  # noqa: E402
 
 class NexusCoreTests(unittest.TestCase):
     def test_only_cloud_providers_are_available(self):
-        self.assertEqual(set(PROVIDERS), {"groq", "ollama"})
+        self.assertEqual(set(PROVIDERS), {"groq", "ollama", "openrouter", "cerebras", "together", "deepseek"})
         with self.assertRaises(ValueError):
             get_provider("remote")
 
     def test_provider_endpoints_are_hosted(self):
         self.assertEqual(PROVIDERS["ollama"].normalized_base_url(), "https://ollama.com/v1")
         self.assertEqual(PROVIDERS["groq"].normalized_base_url(), "https://api.groq.com/openai/v1")
+        self.assertEqual(PROVIDERS["openrouter"].normalized_base_url(), "https://openrouter.ai/api/v1")
+        self.assertEqual(PROVIDERS["cerebras"].normalized_base_url(), "https://api.cerebras.ai/v1")
 
     def test_read_only_command_does_not_require_confirmation(self):
         self.assertFalse(command_needs_confirmation("Get-ChildItem $HOME"))
@@ -56,7 +58,7 @@ class NexusCoreTests(unittest.TestCase):
         self.assertEqual(detect_language("en-US"), "en")
 
     def test_translations_have_fallback_and_formatting(self):
-        self.assertEqual(tr("welcome", "pt"), "Bem-vindo ao NEXUS 1.0")
+        self.assertEqual(tr("welcome", "pt"), "Bem-vindo ao NEXUS 1.1")
         self.assertEqual(tr("unknown_command", "en", command="/oops"), "Unknown command: /oops. Type /help.")
         self.assertEqual(language_name("en"), "English")
 

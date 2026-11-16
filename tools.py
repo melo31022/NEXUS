@@ -52,6 +52,42 @@ class DesktopTools:
         return f"Clique esquerdo em ({x}, {y})."
 
     @staticmethod
+    def right_click(x: int, y: int) -> str:
+        x, y = DesktopTools._check_coordinates(x, y)
+        pyautogui.click(x, y, button="right")
+        return f"Clique direito em ({x}, {y})."
+
+    @staticmethod
+    def double_click(x: int, y: int) -> str:
+        x, y = DesktopTools._check_coordinates(x, y)
+        pyautogui.doubleClick(x, y, button="left")
+        return f"Duplo clique em ({x}, {y})."
+
+    @staticmethod
+    def scroll(amount: int, x: int | None = None, y: int | None = None) -> str:
+        if not -20 <= int(amount) <= 20 or int(amount) == 0:
+            raise ValueError("A rolagem precisa estar entre -20 e 20 linhas e não pode ser zero.")
+        if x is not None and y is not None:
+            x, y = DesktopTools._check_coordinates(x, y)
+            pyautogui.moveTo(x, y, duration=0.1)
+        pyautogui.scroll(int(amount))
+        return f"Rolagem executada: {int(amount)} linhas."
+
+    @staticmethod
+    def activate_window(title: str) -> str:
+        query = str(title).strip()
+        if not query or len(query) > 200:
+            raise ValueError("Informe parte do título da janela (até 200 caracteres).")
+        matches = [window for window in gw.getAllWindows() if query.casefold() in (window.title or "").casefold()]
+        if not matches:
+            return f"Nenhuma janela corresponde ao título: {query}"
+        try:
+            matches[0].activate()
+        except Exception as exc:
+            raise RuntimeError(f"Não foi possível ativar a janela: {type(exc).__name__}") from exc
+        return f"Solicitação de foco enviada para: {(matches[0].title or query)[:200]}. Verifique a janela ativa."
+
+    @staticmethod
     def type_text(text: str) -> str:
         if not isinstance(text, str):
             raise TypeError("O texto precisa ser uma string.")

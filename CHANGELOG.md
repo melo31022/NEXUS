@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.1.0 — 2026-11-16
+
+### Added
+- Lightweight Token Guard with heuristic token estimation, conversation compaction, configurable context/output budgets, and tool-call limits.
+- Persistent task journals with atomic checkpoints, progress/action records, workspace persistence, credential redaction, and the `/tasks` command.
+- Expanded desktop controls: right-click, double-click, bounded scrolling, and window activation by title.
+- Bounded transient-request retries with `Retry-After` support and sanitized HTTP error details.
+- Additional cloud provider configurations: OpenRouter, Cerebras, Together AI, and DeepSeek, alongside Groq Cloud and Ollama Cloud.
+- Provider and task-recovery documentation.
+- Regression tests for token budgeting, checkpoint persistence/redaction, and provider retry behavior.
+- GitHub Actions workflow for unit tests and Python compilation.
+
+### Improved
+- Provider API-key environment variables are configured per provider.
+- Task checkpoint arguments/results redact common credential fields.
+- Terminal status, command help, and version branding updated to 1.1.
+
+### Validation status
+- 19 automated unit tests passed in GitHub Actions on Ubuntu with Python 3.11.
+- Python `compileall` passed.
+- Windows ARM64 acceptance testing has not yet been performed.
+- Live provider authentication, model catalogs, tool calling, and vision remain provider/model-specific acceptance tests.
+- Windows desktop automation and screenshots require manual validation on Windows.
+
+### Known limitations
+- Token counts are heuristic estimates, not exact provider tokenization.
+- Task recovery records state but intentionally does not automatically replay desktop actions or file-changing operations.
+- Additional providers use OpenAI-compatible conventions where applicable; feature parity is not guaranteed.
+- A complete GUI redesign is not included in this release line.
+
 ## 1.0.0 — 2026-11-15
 
 ### Added
