@@ -40,6 +40,10 @@ class TaskJournal:
             os.fsync(handle.fileno())
         temporary.replace(self.path)
 
+    def set_workspace(self, workspace: str | None) -> None:
+        self.state["workspace"] = workspace
+        self.save()
+
     def begin_step(self, step: int) -> None:
         self.state["step"] = int(step)
         self.state["status"] = "running"
