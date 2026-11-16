@@ -385,7 +385,7 @@ class NexusAgent:
                         arguments = {}
                         result: Any = f"Argumentos inválidos para {name}: {exc}"
                     else:
-                        if name in {"powershell_execute", "type_text", "write_text_file", "read_text_file"}:
+                        if name in {"powershell_execute", "type_text", "write_text_file", "read_text_file", "screenshot"}:
                             fields = ", ".join(str(key) for key in arguments) if isinstance(arguments, dict) else "desconhecidos"
                             args_display = f"[argumentos ocultos; campos: {fields}]"
                         else:

@@ -52,11 +52,14 @@ class TaskJournal:
         self.save()
 
     def record_action(self, name: str, arguments: dict[str, Any], result: str, *, success: bool) -> None:
-        if name in {"type_text", "write_text_file", "read_text_file", "powershell_execute"}:
+        if name in {"type_text", "write_text_file", "read_text_file", "powershell_execute", "screenshot"}:
             safe_args = {"fields": sorted(str(key)[:80] for key in arguments), "values_omitted": True}
         else:
             safe_args = redact_sensitive_dict(arguments)
-        safe_result = redact_sensitive_text(str(result))[:1500]
+        if name in {"type_text", "write_text_file", "read_text_file", "powershell_execute", "screenshot"}:
+            safe_result = f"[output omitted; {len(str(result))} chars]"
+        else:
+            safe_result = redact_sensitive_text(str(result))[:1500]
         self.state["actions"].append({
             "name": str(name)[:100], "arguments": safe_args,
             "result": safe_result, "success": bool(success),
