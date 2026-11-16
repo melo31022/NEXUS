@@ -53,6 +53,7 @@ This roadmap distinguishes implemented work from items that still require develo
 - [x] Add bounded scrolling.
 - [x] Add window activation by title.
 - [x] Expose desktop controls to the Operator tool loop.
+- [x] Add bounded text-file reading scoped to the active project/workspace; block common credential-file names.
 - [ ] Verify action results using post-action observation.
 - [ ] Improve interruption controls and active-window handling.
 - [ ] Complete Windows 10/11 and Windows ARM64 acceptance testing.

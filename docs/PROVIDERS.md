@@ -42,3 +42,10 @@ Other commands:
 - `/test`: send a short, low-token chat request to verify endpoint, authentication and selected model. This request may count against the provider's quota.
 
 Existing `.env` configurations remain supported. Secure settings saved through the CMD take precedence over `.env`. Never paste keys into ordinary commands, chat messages, logs, screenshots, or source files.
+
+
+## Vision capability defaults
+
+Vision is enabled only for exact model IDs configured in `ProviderConfig.vision_models`; model-name substring guessing is intentionally avoided. The OpenRouter defaults include `nvidia/nemotron-3.5-super-vl:free` and `nvidia/nemotron-3.5-super-vl`, which accept image input through Chat Completions. Additional IDs can be added with `OPENROUTER_VISION_MODELS` (comma-separated). Groq currently includes `qwen/qwen3.8-27b`; other providers can be configured through their corresponding `*_VISION_MODELS` environment variables.
+
+A model's public capability listing is not proof that a particular account route is currently available. Run `/modeltest` with a user-approved screenshot to validate the actual configured route.

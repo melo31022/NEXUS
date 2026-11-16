@@ -24,6 +24,11 @@ class NexusCoreTests(unittest.TestCase):
         self.assertEqual(PROVIDERS["openrouter"].normalized_base_url(), "https://openrouter.ai/api/v1")
         self.assertEqual(PROVIDERS["cerebras"].normalized_base_url(), "https://api.cerebras.ai/v1")
 
+    def test_openrouter_nemotron_super_vl_is_configured_for_vision(self):
+        self.assertTrue(PROVIDERS["openrouter"].supports_vision("nvidia/nemotron-3.5-super-vl:free"))
+        self.assertTrue(PROVIDERS["openrouter"].supports_vision("nvidia/nemotron-3.5-super-vl"))
+        self.assertFalse(PROVIDERS["openrouter"].supports_vision("openai/gpt-4o-mini"))
+
     def test_read_only_command_does_not_require_confirmation(self):
         self.assertFalse(command_needs_confirmation("Get-ChildItem $HOME"))
 

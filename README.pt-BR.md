@@ -9,7 +9,7 @@ O NEXUS interpreta pedidos, planeja tarefas e pode interagir com o Windows usand
 - Provedores em nuvem: Ollama Cloud, Groq Cloud, OpenRouter, Cerebras, Together AI e DeepSeek.
 - Catálogo de modelos consultado no provedor selecionado.
 - Modos Chat, Planner e Operator.
-- Ferramentas de mouse, teclado, janelas, screenshots, arquivos e PowerShell.
+- Ferramentas de mouse, teclado, janelas, screenshots, listagem e leitura controlada de arquivos de texto e PowerShell.
 - Workspace selecionável.
 - Visão opcional para modelos explicitamente configurados como compatíveis.
 - Token Guard: estimativa de contexto, compactação de histórico e limites de saída/chamadas de ferramentas.

@@ -198,6 +198,47 @@ class DesktopTools:
         return "\n".join(lines)
 
     @staticmethod
+    def read_text_file(path: str, directory: str | None = None, max_chars: int = 5500) -> str:
+        """Read a bounded text file inside the active workspace or project directory."""
+        raw_path = str(path or "").strip().strip('"')
+        if not raw_path or len(raw_path) > 1000:
+            raise ValueError("Informe um caminho de arquivo válido (até 1.000 caracteres).")
+        target = Path(raw_path).expanduser()
+        root = Path(directory).expanduser().resolve() if directory else Path.cwd().resolve()
+        if not target.is_absolute():
+            target = root / target
+        target = target.resolve()
+        try:
+            target.relative_to(root)
+        except ValueError as exc:
+            raise PermissionError("Por segurança, a leitura está limitada ao workspace/diretório do projeto. Defina /workspace para mudar o escopo.") from exc
+        lower_name = target.name.casefold()
+        protected = (
+            lower_name == ".env" or lower_name.startswith(".env.")
+            or any(token in lower_name for token in ("apikey", "api_key", "api-key", "credential", "password", "secret"))
+            or lower_name in {"token", "token.txt", "access_token.txt", "refresh_token.txt"}
+            or target.suffix.casefold() in {".pem", ".key", ".p12", ".pfx"}
+        )
+        if protected:
+            raise PermissionError("Arquivo com nome associado a credenciais/segredos bloqueado pela leitura automática.")
+        if not target.exists() or not target.is_file():
+            raise FileNotFoundError(f"Arquivo não encontrado: {target}")
+        if target.stat().st_size > 1_000_000:
+            raise ValueError("Arquivo maior que 1 MB; leitura bloqueada para evitar consumo excessivo de memória/contexto.")
+        limit = max(200, min(int(max_chars), 5500))
+        raw = target.read_bytes()
+        if b"\x00" in raw[:4096]:
+            raise ValueError("O arquivo parece ser binário; a ferramenta aceita apenas texto.")
+        try:
+            content = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            content = raw.decode("cp1252")
+        truncated = len(content) > limit
+        excerpt = content[:limit]
+        suffix = f"\n[conteúdo truncado; {len(content) - limit} caracteres omitidos]" if truncated else ""
+        return f"Arquivo: {target}\n{excerpt}{suffix}"
+
+    @staticmethod
     def screen_info() -> dict[str, Any]:
         """Return measured display dimensions and foreground-window metadata."""
         width, height = pyautogui.size()

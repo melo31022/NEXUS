@@ -68,6 +68,7 @@ TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "press_key", "description": "Pressiona uma tecla, como enter, tab ou esc.", "parameters": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}}},
     {"type": "function", "function": {"name": "key_combination", "description": "Pressiona uma combinação de teclas, como ctrl+c.", "parameters": {"type": "object", "properties": {"keys": {"type": "array", "items": {"type": "string"}}}, "required": ["keys"]}}},
     {"type": "function", "function": {"name": "list_directory", "description": "Lista diretamente os arquivos e subpastas de uma pasta, sem PowerShell e sem alterar nada. Se path for omitido, lista o workspace atual ou a Área de Trabalho. Use para pedidos como listar arquivos, ver conteúdo de uma pasta ou conferir arquivos criados.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "limit": {"type": "integer"}}}}},
+    {"type": "function", "function": {"name": "read_text_file", "description": "Lê um arquivo de texto dentro do workspace/diretório do projeto. Não lê .env, nomes de arquivos associados a chaves, credenciais ou senhas, nem arquivos binários. Use somente quando o usuário pedir para ler/inspecionar o arquivo.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "max_chars": {"type": "integer"}}}}},
     {"type": "function", "function": {"name": "write_text_file", "description": "Cria um novo arquivo .txt no workspace atual (ou na Área de Trabalho se nenhum workspace estiver definido), sem sobrescrever arquivos existentes.", "parameters": {"type": "object", "properties": {"filename": {"type": "string"}, "content": {"type": "string"}}, "required": ["filename", "content"]}}},
     {"type": "function", "function": {"name": "set_workspace", "description": "Define como workspace uma pasta existente escolhida pelo usuário ou recém-criada para o projeto. Use antes de criar arquivos do projeto nessa pasta.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
     {"type": "function", "function": {"name": "screenshot", "description": "Salva uma captura de tela. Com visão ativada e modelo compatível, a imagem também será enviada ao modelo para análise.", "parameters": {"type": "object", "properties": {"filename": {"type": "string"}}}}},
@@ -120,7 +121,8 @@ class NexusAgent:
                 "Gere o conteúdo solicitado quando o usuário disser que você pode inventá-lo. "
                 "Mantenha contexto entre mensagens da sessão. "
                 "Preserve quebras de linha reais no conteúdo; não escreva sequências literais \\n. "
-                "Para listar arquivos e pastas, use list_directory; nunca use PowerShell para uma listagem simples. "
+                "Para listar arquivos e pastas, use list_directory; nunca use PowerShell para uma listagem simples. " 
+                "Quando o usuário pedir para ler um arquivo de texto, use read_text_file; não tente ler .env, chaves ou arquivos de credenciais. "
                 "Para 'abrir um aplicativo e escrever texto', use open_application com path e text opcionais na mesma chamada; isso abre a janela e digita o texto sem uma segunda rodada da IA. "
                 "Para outras tarefas curtas de interface, emita chamadas ordenadas no mesmo lote quando possível. "
                 "open_application já tenta ativar a janela; não chame list_windows ou activate_window depois, a menos que a abertura falhe ou a janela não esteja pronta. "
@@ -165,7 +167,7 @@ class NexusAgent:
             directory_snapshot = "(não enumerado: este modo não possui ferramentas do computador)"
         tool_names = ", ".join((
             "mouse_move", "left_click", "right_click", "double_click", "scroll", "activate_window",
-            "type_text", "press_key", "key_combination", "list_directory", "write_text_file",
+            "type_text", "press_key", "key_combination", "list_directory", "read_text_file", "write_text_file",
             "set_workspace", "screenshot", "list_windows", "get_active_window", "get_screen_info",
             "open_application", "powershell_execute"
         )) if self.agent_profile["tools"] else "nenhuma"
@@ -255,6 +257,12 @@ class NexusAgent:
             return DesktopTools.list_directory(
                 path=arguments.get("path") or (self.workspace_dir or str(DesktopTools._desktop_directory())),
                 limit=arguments.get("limit", 100),
+            )
+        if name == "read_text_file":
+            return DesktopTools.read_text_file(
+                path=arguments.get("path", ""),
+                directory=self.workspace_dir or str(Path.cwd()),
+                max_chars=arguments.get("max_chars", 5500),
             )
         if name == "write_text_file":
             return DesktopTools.write_text_file(
@@ -387,9 +395,13 @@ class NexusAgent:
                     else:
                         result_text = str(result)
                     console.print(Text(f"    ↳ {result_text[:700]}"))
-                    self._write_log(f"[Result] {redact_sensitive_text(result_text)}")
-                    action_ok = not result_text.lower().startswith(("erro:", "falha", "powershell retornou código"))
-                    self.task_journal.record_action(name, arguments if isinstance(arguments, dict) else {}, result_text, success=action_ok)
+                    private_output = name in {"read_text_file", "powershell_execute"}
+                    logged_result = f"[saída omitida por privacidade; {len(result_text)} caracteres]" if private_output else redact_sensitive_text(result_text)
+                    self._write_log(f"[Result] {logged_result}")
+                    lowered_result = result_text.strip().lower()
+                    action_ok = not lowered_result.startswith(("erro", "falha", "argumentos inválidos", "powershell retornou código"))
+                    journal_result = logged_result if private_output else result_text
+                    self.task_journal.record_action(name, arguments if isinstance(arguments, dict) else {}, journal_result, success=action_ok)
                     self.messages.append({
                         "role": "tool", "tool_call_id": call_id or f"nexus-{step}-{name}",
                         "name": name, "content": result_text[:6000],
