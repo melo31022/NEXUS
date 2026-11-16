@@ -198,7 +198,8 @@ class NexusSession:
             ("/language auto|pt|en", tr("language_command", self.language)),
             ("/workspace [folder|off]", tr("cmd_workspace", self.language)),
             ("/status", tr("cmd_status", self.language)),
-            ("/tasks", "Lista tarefas recentes e checkpoints salvos; retomada exige revisão."),
+            ("/tasks", "Lista tarefas recentes e checkpoints salvos."),
+            ("/resume <id>", "Retoma uma tarefa interrompida após revisão e confirmação; não repete ações automaticamente."),
             ("/clear", tr("cmd_clear", self.language)),
             ("/help", tr("cmd_help", self.language)),
             ("/exit", tr("cmd_exit", self.language)),
@@ -412,6 +413,72 @@ class NexusSession:
         console.print(f"Resumo: {passed} aprovados • {partial} parciais • {len(results) - passed - partial} falhos/não testados.")
         console.print("[dim]A identidade do provedor/modelo vem da configuração local, não da autoidentificação verbal do modelo.[/dim]")
 
+    def resume_task(self, task_id_prefix: str) -> None:
+        prefix = task_id_prefix.strip().lower()
+        if len(prefix) < 6:
+            console.print("[yellow]Informe ao menos 6 caracteres do ID exibido por /tasks.[/yellow]")
+            return
+        records = TaskJournal.recent(limit=50)
+        matches = [item for item in records if str(item.get("task_id", "")).lower().startswith(prefix)]
+        if not matches:
+            console.print("[yellow]Nenhuma tarefa corresponde a esse ID. Use /tasks para consultar os IDs recentes.[/yellow]")
+            return
+        if len(matches) > 1:
+            console.print("[yellow]ID ambíguo. Informe mais caracteres do ID.[/yellow]")
+            return
+        record = matches[0]
+        status = str(record.get("status", ""))
+        if status not in {"running", "interrupted", "failed", "step_limit"}:
+            console.print(f"[yellow]A tarefa está com estado '{status}' e não pode ser retomada por este fluxo.[/yellow]")
+            return
+        actions = record.get("actions", [])
+        completed = [str(item.get("name", "ação")) for item in actions if isinstance(item, dict) and item.get("success")]
+        uncertain = [str(item.get("name", "ação")) for item in actions if isinstance(item, dict) and not item.get("success")]
+        console.print(Panel(
+            f"Objetivo: {str(record.get('goal', ''))[:800]}\n"
+            f"Estado: {status} • Etapa registrada: {record.get('step', 0)}\n"
+            f"Ações concluídas registradas: {len(completed)}\n"
+            f"Ações com resultado incerto: {len(uncertain)}",
+            title=f"Revisão da tarefa {str(record.get('task_id', ''))[:8]}", border_style="yellow"
+        ))
+        if completed:
+            console.print("[dim]Ações já registradas como concluídas: " + ", ".join(completed[-12:]) + "[/dim]")
+        if uncertain:
+            console.print("[yellow]Ações que precisam de inspeção antes de qualquer repetição: " + ", ".join(uncertain[-12:]) + "[/yellow]")
+        workspace = record.get("workspace")
+        if workspace and not Path(str(workspace)).is_dir():
+            console.print("[yellow]O workspace salvo não existe mais; a retomada usará o workspace padrão.[/yellow]")
+            workspace = None
+        if console.input("Criar uma nova execução vinculada a esse checkpoint? [s/N]: ").strip().lower() not in {"s", "sim", "y", "yes"}:
+            console.print("[dim]Retomada cancelada.[/dim]")
+            return
+        completed_summary = ", ".join(completed[-20:]) if completed else "nenhuma ação marcada como concluída"
+        uncertain_summary = ", ".join(uncertain[-20:]) if uncertain else "nenhuma ação com resultado incerto"
+        resume_goal = (
+            "RETOMADA COM REVISÃO MANUAL. Não reinicie a tarefa do zero.\n"
+            f"Objetivo original: {record.get('goal', '')}\n"
+            f"Ações registradas como concluídas (não repetir): {completed_summary}.\n"
+            f"Ações com resultado incerto (inspecionar o estado atual antes de qualquer decisão): {uncertain_summary}.\n"
+            "Primeiro verifique o estado atual do computador e dos arquivos. Não repita cliques, digitação, gravações ou comandos "
+            "apenas porque o checkpoint foi interrompido. Se uma ação puder ter ocorrido parcialmente, peça confirmação antes de refazê-la. "
+            "Continue somente com etapas que ainda não foram concluídas. O histórico anterior é um resumo do journal, não uma restauração "
+            "integral da conversa nem uma garantia sobre o estado atual do sistema."
+        )
+        agent = NexusAgent(
+            goal=resume_goal,
+            provider=self.provider,
+            model=self.model,
+            mode_name=self.mode_name,
+            vision_enabled=False,
+            log_file=self.log_file,
+            conversation=None,
+            workspace_dir=workspace,
+            language=self.language,
+            resume_from_task_id=str(record.get("task_id", "")),
+        )
+        self.conversation = agent.run()
+        self.workspace_dir = Path(agent.workspace_dir) if agent.workspace_dir else None
+
     def initialize_project_instructions(self) -> None:
         target = BASE_DIR / "NEXUS.md"
         if target.exists():
@@ -505,6 +572,8 @@ class NexusSession:
                 self.vision_enabled = False
                 self.reset_conversation()
                 console.print(f"[green]Provedor selecionado: {self.provider.label} • modelo padrão: {self.model}[/green]")
+        elif command == "/resume":
+            self.resume_task(argument)
         elif command == "/tasks":
             recent = TaskJournal.recent(limit=8)
             if not recent:

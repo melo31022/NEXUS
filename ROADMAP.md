@@ -43,7 +43,7 @@ This roadmap distinguishes implemented work from items that still require develo
 - [x] Redact common credential-like values from recorded action data.
 - [x] Provide the `/tasks` command to inspect recent records.
 - [x] Avoid automatically replaying uncertain desktop or file-changing actions.
-- [ ] Add explicit user-reviewed continuation workflow.
+- [x] Add explicit user-reviewed continuation workflow linked to the previous journal; no desktop action is replayed automatically.
 - [ ] Improve task summaries and completed/pending action reporting.
 
 ### 3. Computer Use

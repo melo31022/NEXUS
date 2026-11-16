@@ -18,6 +18,7 @@ Last updated: 2026-11-16
 - [x] Add mocked regression tests for ModelTest and secret redaction.
 - [x] Add bounded workspace-scoped text-file reading and omit file/PowerShell output from persistent logs.
 - [x] Enable exact OpenRouter Nemotron 3.5 Super VL model IDs for opt-in vision.
+- [x] Add `/resume <id>` with explicit confirmation, completed/uncertain action summary and linked follow-up journal.
 - [ ] Confirm GitHub Actions results for this commit.
 - [ ] Run manual acceptance tests on Windows 10/11 ARM64.
 - [ ] Complete remaining Token Guard, Task Recovery, Computer Use, Vision, provider compatibility and documentation work.

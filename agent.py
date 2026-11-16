@@ -91,6 +91,7 @@ class NexusAgent:
         conversation: list[dict[str, Any]] | None = None,
         workspace_dir: str | Path | None = None,
         language: str = "pt",
+        resume_from_task_id: str | None = None,
     ) -> None:
         if mode_name not in MODES:
             raise ValueError(f"Modo de operação desconhecido: {mode_name}")
@@ -104,7 +105,7 @@ class NexusAgent:
         self.workspace_dir = str(Path(workspace_dir).expanduser().resolve()) if workspace_dir else None
         self.log_file = Path(log_file) if log_file else BASE_DIR / "nexus_logs" / "nexus_history.log"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
-        self.task_journal = TaskJournal(goal, self.workspace_dir)
+        self.task_journal = TaskJournal(goal, self.workspace_dir, parent_task_id=resume_from_task_id)
         self._write_log(
             f"\n{'=' * 72}\n[SESSION {datetime.now().isoformat(timespec='seconds')}] "
             f"mode={mode_name} provider={provider.name} model={self.model}\n{'=' * 72}"

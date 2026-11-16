@@ -13,7 +13,7 @@ SAFE_TO_RETRY = {"get_active_window", "get_screen_info", "list_windows", "screen
 
 
 class TaskJournal:
-    def __init__(self, goal: str, workspace: str | None = None, root: Path | None = None) -> None:
+    def __init__(self, goal: str, workspace: str | None = None, root: Path | None = None, parent_task_id: str | None = None) -> None:
         self.root = root or Path(__file__).resolve().parent / "nexus_tasks"
         self.root.mkdir(parents=True, exist_ok=True)
         self.task_id = uuid.uuid4().hex
@@ -24,6 +24,8 @@ class TaskJournal:
             "updated_at": self._now(), "step": 0, "actions": [],
             "recovery_policy": "manual_review_only",
         }
+        if parent_task_id:
+            self.state["resumed_from"] = str(parent_task_id)[:64]
         self.save()
 
     @staticmethod

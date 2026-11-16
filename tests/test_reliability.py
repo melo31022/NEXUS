@@ -31,6 +31,13 @@ class TokenGuardTests(unittest.TestCase):
 
 
 class TaskRecoveryTests(unittest.TestCase):
+    def test_resumed_journal_links_to_parent_checkpoint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            journal = TaskJournal("resume task", root=Path(temp), parent_task_id="parent-task-123")
+            self.assertEqual(journal.state["resumed_from"], "parent-task-123")
+            records = TaskJournal.recent(Path(temp))
+            self.assertEqual(records[0]["resumed_from"], "parent-task-123")
+
     def test_checkpoint_persists_and_redacts_secrets(self):
         with tempfile.TemporaryDirectory() as temp:
             journal = TaskJournal("test task", root=Path(temp))

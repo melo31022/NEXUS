@@ -88,6 +88,7 @@ Nunca publique o arquivo `.env` nem compartilhe suas chaves de API.
 | `/vision on` e `/vision off` | Controla o envio de screenshots. |
 | `/workspace [pasta]` | Mostra ou seleciona o workspace. |
 | `/tasks` | Lista checkpoints de tarefas recentes. |
+| `/resume <id>` | Retoma uma tarefa interrompida após revisão e confirmação; não repete ações automaticamente. |
 | `/status` | Mostra a configuração atual. |
 | `/help` | Exibe a ajuda. |
 | `/exit` | Encerra o NEXUS. |
