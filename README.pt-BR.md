@@ -26,19 +26,33 @@ A compatibilidade com ferramentas e imagens varia por provedor e modelo. A prese
 - Conexão com a internet.
 - Chave de API de um provedor em nuvem compatível.
 
-## Instalação rápida
+## Instalação rápida (CMD)
 
-1. Baixe o ZIP da branch `nexus-1.1-work` no GitHub e extraia a pasta.
-2. Abra o terminal dentro da pasta extraída.
+Os comandos abaixo são para o **Prompt de Comando (CMD)** do Windows.
+
+1. Baixe o ZIP da branch `dev-1.1` no GitHub e extraia a pasta.
+2. Abra o CMD dentro da pasta extraída.
 3. Execute:
 
-   ```powershell
+   ```cmd
    py -3.11 iniciar.py
    ```
 
 4. Na primeira execução, o inicializador cria o ambiente virtual, instala as dependências e cria `.env` a partir de `.env.example`.
 5. Abra `.env`, configure o provedor e a chave de API correspondente.
 6. Salve o arquivo e inicie o NEXUS novamente.
+
+## Instalação manual (CMD)
+
+Execute os comandos dentro da pasta do projeto:
+
+```cmd
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env
+.venv\Scripts\python.exe main.py
+```
 
 ## Provedores
 
