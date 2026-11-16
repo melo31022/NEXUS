@@ -33,8 +33,9 @@ This roadmap distinguishes implemented work from items that still require develo
 - [x] Limit tool calls and execution steps.
 - [x] Apply bounded retries for selected transient HTTP failures and honor `Retry-After`.
 - [ ] Use exact provider tokenizers where available.
-- [ ] Surface token estimates and usage feedback in the interface.
-- [ ] Further optimize oversized tool outputs and logs.
+- [x] Surface estimated prompt size and provider-reported usage when available.
+- [x] Compact oversized tool/assistant outputs when the recent context exceeds budget.
+- [x] Omit file-read and PowerShell output from persistent logs/journals.
 
 ### 2. Task Recovery
 
@@ -99,7 +100,8 @@ This roadmap distinguishes implemented work from items that still require develo
 - [x] Add automated reliability regression tests.
 - [x] Run unit tests in GitHub Actions on Ubuntu/Python 3.11.
 - [x] Run Python compilation checks in CI.
-- [ ] Test on Windows 10/11, including ARM64.
+- [x] Configure GitHub Actions jobs for Ubuntu, Windows x64 and Windows ARM64.
+- [ ] Complete real desktop acceptance tests on Windows 10/11 ARM64.
 - [ ] Test live provider authentication, catalogs, tool calls, and vision.
 - [ ] Complete end-to-end multi-step task acceptance testing.
 - [ ] Review all remaining limitations before a stable release.
@@ -121,7 +123,7 @@ This roadmap distinguishes implemented work from items that still require develo
 - Additional providers use compatible API conventions where possible; feature parity is not guaranteed.
 - Task journals record state but do not automatically replay desktop actions.
 - A model being listed does not guarantee tool-calling or vision support.
-- CI on Ubuntu does not establish Windows or Windows ARM64 compatibility.
+- Windows ARM64 CI validates unit tests and Python compilation, but does not establish real desktop automation or live provider compatibility on the user's hardware.
 
 ## Future Versions
 

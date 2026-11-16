@@ -8,6 +8,10 @@
 - Added explicit operational context for provider, model, mode, workspace and a bounded filename snapshot.
 - Fixed secret-redaction regular expressions in task recovery and directory-listing line separators.
 - Added regression tests for ModelTest behavior and secret redaction.
+- Added workspace-scoped text-file reading with common credential-file protections.
+- Added `/resume <id>` as a user-confirmed continuation linked to the prior journal; no desktop actions are replayed automatically.
+- Strengthened Token Guard compaction for oversized recent turns, enforced the configured context budget, and displayed provider-reported token usage when available.
+- Added GitHub Actions coverage for Ubuntu, Windows x64 and Windows ARM64.
 
 # Changelog
 

@@ -49,8 +49,8 @@ The commands below are intended for **Command Prompt (CMD)**, not PowerShell.
 
    Alternatively, use `python iniciar.py`.
 4. On first launch, the launcher creates a virtual environment, installs dependencies, and creates `.env` from `.env.example` when needed.
-5. Open `.env`, configure the provider and its API key, then save.
-6. Launch NEXUS again.
+5. Launch NEXUS and run `/setup` to configure provider, API key, HTTPS endpoint and model in the terminal. The key is entered without echo and encrypted for the current Windows user with DPAPI. Existing `.env` settings remain supported.
+6. Run `/test` to verify the connection, then `/agents` and `/agent <id>` to select a model.
 
 The first installation requires an internet connection. Later launches reuse the virtual environment.
 
@@ -85,6 +85,12 @@ Never publish or share `.env` or API keys.
 | Command | Description |
 |---|---|
 | `/providers` | Lists supported providers. |
+| `/setup [provider]` | Configures provider, key, endpoint and model in the terminal. |
+| `/key status`, `/key set`, `/key remove` | Checks, saves or removes an API key without displaying it. |
+| `/endpoint [https://...]` | Shows or changes the active provider endpoint. |
+| `/test` | Tests authentication and a short model response. |
+| `/modeltest` | Runs live chat, JSON, context, tool-call and optional vision checks. |
+| `/resume <id>` | Starts a user-reviewed continuation linked to an interrupted task checkpoint. |
 | `/provider <name>` | Selects a provider. |
 | `/tasks` | Lists recent task checkpoints. |
 | `/agents` or `/models` | Retrieves available models. |
@@ -118,8 +124,7 @@ Keep API keys in `.env`, never commit that file, and avoid running NEXUS as Admi
 - Provider API compatibility, tool calling, and vision vary by provider and model.
 - Task checkpoints preserve state for review but do not automatically replay uncertain actions.
 - Session conversation history is not restored after restarting NEXUS.
-- Automated tests and Python compilation passed in GitHub Actions on Ubuntu with Python 3.11 (19 unit tests).
-- Windows desktop automation, Windows ARM64, and live provider authentication/model behavior still require acceptance testing on Windows.
+- GitHub Actions is configured to run unit tests and compilation on Ubuntu, Windows x64, and Windows ARM64 (`windows-11-arm`). This does not replace manual desktop acceptance tests or live provider checks.
 
 ## Project Structure
 
@@ -129,8 +134,10 @@ nexus/
 ├── .github/workflows/tests.yml
 ├── docs/
 │   ├── PROVIDERS.md
-│   └── TASK_RECOVERY.md
+│   ├── TASK_RECOVERY.md
+│   └── MODELTEST.md
 ├── agent.py
+├── model_test.py
 ├── catalog.py
 ├── config.py
 ├── i18n.py
@@ -142,7 +149,8 @@ nexus/
 ├── tools.py
 ├── tests/
 │   ├── test_core.py
-│   └── test_reliability.py
+│   ├── test_reliability.py
+│   └── test_model_test.py
 ├── README.md
 ├── README.pt-BR.md
 ├── ROADMAP.md

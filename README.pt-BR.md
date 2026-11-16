@@ -99,14 +99,14 @@ Use `/modeltest` para executar chamadas reais de avaliação ao modelo ativo. O 
 
 ## Token Guard
 
-O Token Guard utiliza uma estimativa aproximada baseada no tamanho das mensagens, não um tokenizer exato de cada provedor. Ajuste `NEXUS_MAX_CONTEXT_TOKENS`, `NEXUS_MAX_OUTPUT_TOKENS`, `NEXUS_MAX_TOOL_CALLS_PER_STEP`, `NEXUS_MAX_STEPS` e `NEXUS_REQUEST_TIMEOUT` no arquivo `.env`.
+O Token Guard utiliza uma estimativa aproximada baseada no tamanho das mensagens, não um tokenizer exato de cada provedor. Quando disponível, também exibe o uso real informado pelo provedor. Ajuste `NEXUS_MAX_CONTEXT_TOKENS`, `NEXUS_MAX_OUTPUT_TOKENS`, `NEXUS_MAX_TOOL_CALLS_PER_STEP`, `NEXUS_MAX_STEPS` e `NEXUS_REQUEST_TIMEOUT` no arquivo `.env`.
 
 ## Recuperação de tarefas
 
-O NEXUS grava checkpoints JSON em `nexus_tasks/`. Use `/tasks` para consultar o estado e as ações registradas. Por segurança, cliques, digitação, comandos PowerShell e gravações de arquivos não são repetidos automaticamente após uma interrupção. Revise o estado atual do computador antes de continuar manualmente. Consulte [docs/TASK_RECOVERY.md](docs/TASK_RECOVERY.md).
+O NEXUS grava checkpoints JSON em `nexus_tasks/`. Use `/tasks` para consultar o estado e as ações registradas. Use `/resume <id>` para iniciar uma nova execução vinculada ao checkpoint após revisão e confirmação. O NEXUS não repete automaticamente ações de computador; a nova execução deve inspecionar o estado atual antes de continuar. Isso não restaura a conversa exata anterior. Consulte [docs/TASK_RECOVERY.md](docs/TASK_RECOVERY.md).
 
 ## Testes e limitações
 
-Os testes unitários e a compilação Python são executados pelo GitHub Actions em Ubuntu com Python 3.11. Isso não substitui testes de aceitação no Windows. Autenticação real, catálogo de modelos, chamadas de ferramentas, visão e automação da área de trabalho precisam ser validados com cada conta/provedor e em Windows, inclusive Windows ARM64.
+A workflow do GitHub Actions está configurada para executar testes unitários e compilação em Ubuntu, Windows x64 e Windows ARM64 (`windows-11-arm`). Isso valida a suíte automatizada nesses ambientes, mas não substitui testes de aceitação com mouse, teclado, janelas e telas reais. Autenticação, catálogo, tool calling e visão ainda precisam ser validados com cada conta/provedor.
 
 O NEXUS prioriza segurança, transparência, baixo consumo local e controle do usuário.

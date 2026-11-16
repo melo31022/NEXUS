@@ -19,7 +19,9 @@ Last updated: 2026-11-16
 - [x] Add bounded workspace-scoped text-file reading and omit file/PowerShell output from persistent logs.
 - [x] Enable exact OpenRouter Nemotron 3.5 Super VL model IDs for opt-in vision.
 - [x] Add `/resume <id>` with explicit confirmation, completed/uncertain action summary and linked follow-up journal.
-- [ ] Confirm GitHub Actions results for this commit.
+- [x] Strengthen Token Guard for oversized recent turns, compact tool/assistant outputs, enforce the context budget and display provider usage when returned.
+- [x] Configure CI matrix for Ubuntu, Windows x64 and Windows ARM64 runners.
+- [ ] Confirm GitHub Actions results for the current CI matrix.
 - [ ] Run manual acceptance tests on Windows 10/11 ARM64.
 - [ ] Complete remaining Token Guard, Task Recovery, Computer Use, Vision, provider compatibility and documentation work.
 
