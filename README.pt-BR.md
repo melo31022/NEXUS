@@ -39,8 +39,8 @@ Os comandos abaixo são para o **Prompt de Comando (CMD)** do Windows.
    ```
 
 4. Na primeira execução, o inicializador cria o ambiente virtual, instala as dependências e cria `.env` a partir de `.env.example`.
-5. Abra `.env`, configure o provedor e a chave de API correspondente.
-6. Salve o arquivo e inicie o NEXUS novamente.
+5. Inicie o NEXUS e execute `/setup` para configurar provedor, chave, endpoint e modelo diretamente no CMD. A chave é digitada sem aparecer na tela e armazenada criptografada pelo Windows.
+6. Se preferir, use `/key set`, `/endpoint`, `/provider` e `/agent`. Execute `/test` para testar a conexão. O arquivo `.env` continua disponível como método alternativo para configurações antigas.
 
 ## Instalação manual (CMD)
 
@@ -74,6 +74,10 @@ Nunca publique o arquivo `.env` nem compartilhe suas chaves de API.
 | Comando | Função |
 |---|---|
 | `/providers` | Lista provedores disponíveis. |
+| `/setup [provider]` | Configura chave, endpoint e modelo pelo CMD. |
+| `/key status\|set\|remove [provider]` | Consulta, adiciona ou remove uma chave sem exibi-la. |
+| `/endpoint [URL]` | Consulta ou altera o endpoint HTTPS. |
+| `/test` | Testa autenticação e uma resposta curta do modelo selecionado. |
 | `/provider <nome>` | Seleciona um provedor. |
 | `/agents` ou `/models` | Consulta o catálogo de modelos. |
 | `/agent <número ou id>` | Seleciona um modelo. |
