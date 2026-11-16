@@ -1,131 +1,125 @@
 # NEXUS — Development Roadmap
 
-This document describes the development direction of NEXUS.
+This roadmap distinguishes implemented work from items that still require development or acceptance testing. Checkboxes describe the current code state, not a guarantee that every provider or Windows environment has been validated.
 
-The roadmap is subject to change as the project evolves.
+## Current development version: 1.1.0
 
-## Current Version: 1.1.0
+### Version 1.0.0 — Initial foundation
 
-NEXUS 1.0 establishes the initial architecture for a Windows computer-use agent powered by cloud AI providers.
-
-### Version 1.0 — Initial Release
-
-- [x] Python-based application architecture.
-- [x] Groq Cloud integration.
-- [x] Ollama Cloud integration.
-- [x] Dynamic provider model catalog.
-- [x] Chat mode.
-- [x] Planner mode.
-- [x] Operator mode.
-- [x] PowerShell integration.
-- [x] Workspace selection.
-- [x] Screenshot support.
-- [x] Optional vision configuration.
-- [x] Windows desktop metadata.
-- [x] Basic heuristic safety checks.
+- [x] Python application architecture for Windows.
+- [x] Groq Cloud and Ollama Cloud integrations.
+- [x] Dynamic model catalog.
+- [x] Chat, Planner, and Operator modes.
+- [x] PowerShell and workspace-aware file tools.
+- [x] Screenshot capture and optional vision configuration.
+- [x] Initial desktop metadata and heuristic safety checks.
 - [x] Portuguese and English interface.
-- [x] Initial GitHub documentation.
-- [x] Python launcher and virtual environment setup.
+- [x] Windows launcher and virtual-environment setup.
 
-## Version 1.1 — Reliability and Computer Control
-
-The main objective of NEXUS 1.1 is to improve reliability, context management, and desktop interaction.
+## Version 1.1.0 — Reliability, Provider Expansion, and Computer Use
 
 ### 1. Token Guard
 
-Improve token consumption and provider rate-limit handling.
-
-- [x] Estimate token usage before sending requests (conservative character-based estimate).
-- [ ] Monitor provider token and request limits.
-- [x] Implement bounded conversation compaction at user-turn boundaries.
-- [x] Preserve system instructions and recent conversation turns.
-- [x] Configure maximum output tokens.
-- [x] Limit tool calls per step and retain the overall step cap.
-- [ ] Compress large PowerShell outputs.
-- [ ] Reduce unnecessary context sent to providers.
-- [x] Respect Retry-After for transient HTTP errors.
-- [x] Implement bounded retries for 429 and selected transient HTTP statuses.
-- [ ] Display estimated token usage.
+- [x] Estimate prompt/context size before requests using a conservative heuristic.
+- [x] Compact older conversation turns while retaining system instructions and recent context.
+- [x] Configure context and output budgets.
+- [x] Limit tool calls and execution steps.
+- [x] Apply bounded retries for selected transient HTTP failures and honor `Retry-After`.
+- [ ] Use exact provider tokenizers where available.
+- [ ] Surface token estimates and usage feedback in the interface.
+- [ ] Further optimize oversized tool outputs and logs.
 
 ### 2. Task Recovery
 
-Improve continuity when tasks are interrupted.
-
-- [x] Implement persistent atomic task checkpoints.
-- [x] Record action outcomes and step state.
-- [x] Persist interrupted/failed task state.
-- [ ] Add explicit, user-reviewed continuation of interrupted tasks (no automatic action replay).
-- [ ] Avoid repeating completed operations.
-- [ ] Improve execution reports.
-- [ ] Preserve workspace information during recovery.
+- [x] Persist task journals and atomic checkpoints.
+- [x] Record task progress, action outcomes, and workspace path.
+- [x] Redact common credential-like values from recorded action data.
+- [x] Provide the `/tasks` command to inspect recent records.
+- [x] Avoid automatically replaying uncertain desktop or file-changing actions.
+- [ ] Add explicit user-reviewed continuation workflow.
+- [ ] Improve task summaries and completed/pending action reporting.
 
 ### 3. Computer Use
 
-Improve interaction with the Windows desktop.
+- [x] Retain mouse movement, keyboard typing, and keyboard shortcuts.
+- [x] Support left/right click and double-click.
+- [x] Add bounded scrolling.
+- [x] Add window activation by title.
+- [x] Expose desktop controls to the Operator tool loop.
+- [ ] Verify action results using post-action observation.
+- [ ] Improve interruption controls and active-window handling.
+- [ ] Complete Windows 10/11 and Windows ARM64 acceptance testing.
 
-- [x] Reliable mouse movement with coordinate validation (existing implementation retained).
-- [x] Left and right mouse clicks.
-- [x] Keyboard typing (existing implementation retained).
-- [x] Keyboard shortcuts (existing implementation retained).
-- [x] Multi-step desktop interaction through the Operator tool loop.
-- [x] Expanded Operator tools for right/double click, scrolling, and window activation.
-- [ ] Immediate task interruption.
-- [ ] Verify actions after execution.
-- [ ] Improve handling of active windows.
+### 4. Vision
 
-### 4. Improved Vision
+- [x] Retain screenshot capture and optional image submission.
+- [x] Gate image submission through provider/model compatibility configuration.
+- [ ] Improve visual grounding and screenshot-based action verification.
+- [ ] Validate image-input behavior for each supported provider/model combination.
 
-Improve the agent's understanding of the desktop.
+### 5. Multi-Provider Support and Compatibility
 
-- [ ] Improve screenshot interpretation.
-- [ ] Combine screenshots with Windows metadata.
-- [ ] Improve active-window identification.
-- [ ] Verify visual changes after operations.
-- [ ] Improve compatibility with image-capable models.
+- [x] Add configuration for Groq Cloud and Ollama Cloud.
+- [x] Add OpenRouter, Cerebras, Together AI, and DeepSeek configurations.
+- [x] Centralize provider request/retry handling.
+- [x] Document provider settings and known compatibility differences.
+- [ ] Verify live authentication and model catalogs for every provider.
+- [ ] Verify tool calling in Chat/Planner/Operator-compatible model combinations.
+- [ ] Verify provider-specific vision support and error cases.
+- [ ] Expand integration tests against live provider APIs where practical.
 
-### 5. Safety and Stability
+### 6. Security and Stability
 
-Improve execution reliability and operational safety.
+- [x] Bound transient request retries.
+- [x] Sanitize provider error details.
+- [x] Redact common secrets in task journal data.
+- [x] Keep task recovery conservative for uncertain actions.
+- [ ] Expand destructive-operation validation and confirmation coverage.
+- [ ] Add broader tests for malformed provider responses and failure paths.
+- [ ] Validate behavior under Windows-specific errors and interruptions.
 
-- [ ] Improve destructive-operation detection.
-- [ ] Expand confirmation mechanisms.
-- [x] Add bounded transient retries and sanitized error summaries.
-- [ ] Prevent excessive tool-call loops.
-- [ ] Improve session management.
-- [ ] Improve execution verification.
-- [ ] Produce clearer failure reports.
+### 7. Interface and Documentation
+
+- [x] Update version branding and command help.
+- [x] Document supported providers and task recovery.
+- [x] Maintain English and Brazilian Portuguese README files.
+- [ ] Further refine terminal presentation and progress reporting.
+- [ ] Add clearer runtime token and task progress feedback.
+
+### 8. Testing and Release Readiness
+
+- [x] Add automated reliability regression tests.
+- [x] Run unit tests in GitHub Actions on Ubuntu/Python 3.11.
+- [x] Run Python compilation checks in CI.
+- [ ] Test on Windows 10/11, including ARM64.
+- [ ] Test live provider authentication, catalogs, tool calls, and vision.
+- [ ] Complete end-to-end multi-step task acceptance testing.
+- [ ] Review all remaining limitations before a stable release.
+
+## Known 1.1.0 limitations
+
+- Token accounting is heuristic and may differ from provider-reported usage.
+- Additional providers use compatible API conventions where possible; feature parity is not guaranteed.
+- Task journals record state but do not automatically replay desktop actions.
+- A model being listed does not guarantee tool-calling or vision support.
+- CI on Ubuntu does not establish Windows or Windows ARM64 compatibility.
 
 ## Future Versions
 
-Potential improvements for versions beyond 1.1:
+Potential work beyond 1.1.0:
 
-- [ ] Persistent conversation memory.
-- [ ] Configurable automation profiles.
-- [ ] Improved graphical interface.
-- [ ] Expanded provider compatibility.
-- [ ] Better task planning and execution.
-- [ ] More robust application control.
-- [ ] Plugin and extension architecture.
-- [ ] Improved documentation and testing.
+- Persistent conversation memory across sessions.
+- Configurable automation profiles.
+- A more advanced graphical interface.
+- Plugin and extension architecture.
+- More sophisticated planning and workflow automation.
 
 ## Development Principles
 
-NEXUS development prioritizes:
-
 1. Reliability over unnecessary complexity.
 2. Efficient cloud token usage.
-3. Transparent task execution.
-4. User control over computer operations.
-5. Safety and clear confirmation.
-6. Compatibility with lightweight Windows computers.
-7. Provider-independent architecture.
-
-## Contributing
-
-Suggestions, bug reports, and contributions are welcome.
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
-
----
-
-**NEXUS Development Roadmap**
+3. Provider-independent architecture where practical.
+4. User control and transparency.
+5. Safe, observable computer interaction.
+6. Lightweight operation on Windows.
+7. Modular code and automated testing.
