@@ -362,7 +362,7 @@ class NexusAgent:
                     tool_calls = tool_calls[:MAX_TOOL_CALLS_PER_STEP]
                     message["tool_calls"] = tool_calls
                 # Preserve the assistant tool-call message exactly as returned by the provider.
-                assistant_message = {key: value for key, value in message.items() if key in {"role", "content", "tool_calls", "refusal"}}
+                assistant_message = {key: value for key, value in message.items() if key in {"role", "content", "tool_calls", "refusal", "reasoning_content", "reasoning_details"}}
                 assistant_message["role"] = "assistant"
                 self.messages.append(assistant_message)
                 console.print(f"[dim]NEXUS • resposta recebida em {elapsed:.1f}s • etapa {step}[/dim]")

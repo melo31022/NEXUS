@@ -29,6 +29,10 @@ class NexusCoreTests(unittest.TestCase):
         self.assertTrue(PROVIDERS["openrouter"].supports_vision("nvidia/nemotron-3.5-super-vl"))
         self.assertFalse(PROVIDERS["openrouter"].supports_vision("openai/gpt-4o-mini"))
 
+    def test_deepseek_flash_uses_current_endpoint_and_supports_vision(self):
+        self.assertEqual(PROVIDERS["deepseek"].base_url, "https://api.deepseek.com")
+        self.assertTrue(PROVIDERS["deepseek"].supports_vision("deepseek-flash"))
+
     def test_read_only_command_does_not_require_confirmation(self):
         self.assertFalse(command_needs_confirmation("Get-ChildItem $HOME"))
 

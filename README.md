@@ -26,7 +26,7 @@ NEXUS 1.1 is the development line that extends the 1.0 foundation with reliabili
 - **Safety checks:** Applies heuristic checks and local confirmation to potentially destructive operations.
 - **Languages:** Portuguese (Brazil) and English.
 
-Provider and model capabilities vary. A model appearing in a catalog does not guarantee tool-calling or image-input compatibility.
+Provider and model capabilities vary. A model appearing in a catalog does not guarantee tool-calling or image-input compatibility. The current DeepSeek default is `deepseek-flash`, which supports image input; OpenRouter's configured vision defaults include Nemotron 3.5 Super VL.
 
 ## Requirements
 

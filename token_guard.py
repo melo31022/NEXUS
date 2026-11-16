@@ -30,6 +30,10 @@ def estimate_messages_tokens(messages: list[dict[str, Any]], tool_schema: Any = 
                     if part.get("type") == "image_url":
                         total += 1_000
         total += estimate_text_tokens(str(message.get("tool_calls", "")))
+        if message.get("reasoning_content") is not None:
+            total += estimate_text_tokens(str(message.get("reasoning_content")))
+        if message.get("reasoning_details") is not None:
+            total += estimate_text_tokens(str(message.get("reasoning_details")))
     if tool_schema:
         total += estimate_text_tokens(str(tool_schema))
     return total

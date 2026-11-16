@@ -9,7 +9,7 @@ NEXUS sends inference requests to hosted APIs. It does not run local language mo
 | OpenRouter | https://openrouter.ai/api/v1 | OPENROUTER_API_KEY |
 | Cerebras Cloud | https://api.cerebras.ai/v1 | CEREBRAS_API_KEY |
 | Together AI | https://api.together.xyz/v1 | TOGETHER_API_KEY |
-| DeepSeek | https://api.deepseek.com/v1 | DEEPSEEK_API_KEY |
+| DeepSeek | https://api.deepseek.com | DEEPSEEK_API_KEY |
 
 Set `NEXUS_PROVIDER` and the corresponding key/model variables in `.env`. Then use `/provider <name>`, `/agents`, and `/agent <model-id>`.
 
@@ -43,6 +43,10 @@ Other commands:
 
 Existing `.env` configurations remain supported. Secure settings saved through the CMD take precedence over `.env`. Never paste keys into ordinary commands, chat messages, logs, screenshots, or source files.
 
+
+## DeepSeek current API behavior
+
+The current DeepSeek Chat Completions endpoint is `https://api.deepseek.com/chat/completions` (base URL without `/v1`). The current Flash model ID is `deepseek-flash`; older names such as `deepseek-chat` should not be assumed to represent the current model. Flash accepts image input and tool calls. In thinking mode, preserve provider-returned `reasoning_content` in assistant messages when continuing a tool-call conversation. NEXUS retains this field, along with OpenRouter `reasoning_details`, instead of dropping provider-specific continuation data.
 
 ## Vision capability defaults
 

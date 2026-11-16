@@ -17,7 +17,7 @@ O NEXUS interpreta pedidos, planeja tarefas e pode interagir com o Windows usand
 - Retentativas limitadas para erros HTTP transitórios, respeitando `Retry-After`.
 - Interface em português brasileiro e inglês.
 
-A compatibilidade com ferramentas e imagens varia por provedor e modelo. A presença de um modelo no catálogo não garante suporte a todas as funções.
+A compatibilidade com ferramentas e imagens varia por provedor e modelo. A presença de um modelo no catálogo não garante suporte a todas as funções. O DeepSeek usa atualmente o modelo `deepseek-flash` e aceita imagens nesse modelo; o OpenRouter inclui o Nemotron 3.5 Super VL na lista de modelos de visão.
 
 ## Requisitos
 

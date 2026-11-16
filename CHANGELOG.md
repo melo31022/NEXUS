@@ -12,6 +12,7 @@
 - Added `/resume <id>` as a user-confirmed continuation linked to the prior journal; no desktop actions are replayed automatically.
 - Strengthened Token Guard compaction for oversized recent turns, enforced the configured context budget, and displayed provider-reported token usage when available.
 - Added GitHub Actions coverage for Ubuntu, Windows x64 and Windows ARM64.
+- Updated DeepSeek to the current base URL and `deepseek-flash` model, enabled its documented vision capability, and preserved provider reasoning fields across tool-call turns.
 
 # Changelog
 
