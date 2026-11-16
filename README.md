@@ -25,15 +25,26 @@
 - Python 3.11 or newer.
 - Internet connection and an API key for the selected provider.
 
-## Quick start
+## Quick Start
 
 1. Download and extract the project.
 2. Open the extracted `nexus` folder.
-3. Double-click **`run_nexus.bat`**.
-4. On first launch, the script creates a virtual environment, installs dependencies, and creates `.env` from `.env.example`.
-5. Open `.env`, add the API key for your provider, save, and launch `run_nexus.bat` again.
+3. Make sure Python 3.11 or newer is installed.
+4. Open a terminal in the project folder and run:
 
-The first installation needs an internet connection and may take a few minutes. Later launches reuse the virtual environment and do not reinstall dependencies unless you remove `.venv`.
+   ```powershell
+   py -3.11 iniciar.py
+   ```
+
+   Alternatively, use `python iniciar.py` if Python 3.11+ is available through that command.
+
+5. On first launch, the launcher creates a virtual environment, installs the required dependencies, and creates `.env` from `.env.example` if it does not already exist.
+6. Open `.env`, add your provider's API key, and save the file.
+7. Launch NEXUS again using `py -3.11 iniciar.py`.
+
+The first installation requires an internet connection and may take a few minutes. Later launches reuse the existing virtual environment and only install dependencies when necessary.
+
+**Note:** Never share your `.env` file or publish your API keys.
 
 ### Manual setup
 
