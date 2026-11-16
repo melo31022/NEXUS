@@ -1,15 +1,18 @@
 # Security Policy
 
+## Protect credentials and private data
+
+- Never commit .env files, API keys, passwords, access tokens, private screenshots, task journals or runtime logs.
+- Prefer /setup and /key set on Windows. NEXUS stores saved provider keys encrypted for the current Windows user with DPAPI.
+- If a key is exposed, revoke/rotate it at the provider. Deleting the local file alone does not invalidate a leaked key.
+- Do not paste credentials into GitHub issues, pull requests, chat logs or screenshots.
+- Desktop screenshots are sent to a cloud provider only after an explicit user confirmation in ModelTest. Review the visible desktop before approving.
+- File reading is scoped to the active workspace/project directory and blocks common credential-file names, but users should still avoid selecting directories containing private data.
+
 ## Reporting a vulnerability
 
-Do not publish API keys, tokens, passwords, private screenshots, or personal data in an issue.
+Use GitHub's private vulnerability reporting feature on the repository's Security tab if it is enabled. If it is unavailable, open a minimal issue without exploit details, credentials or personal data and ask the maintainer for a private reporting channel.
 
-For a security concern, open a private vulnerability report through GitHub's **Security** tab when that feature is enabled for this repository. If private reporting is unavailable, contact the repository maintainer privately before disclosing details publicly.
+## Scope
 
-## Safe use
-
-- Keep provider API keys in `.env`; never commit that file.
-- Enable GitHub secret scanning and push protection where available.
-- Do not run NEXUS as Administrator unless strictly necessary.
-- Review PowerShell commands before approving them. The built-in checks are heuristic and are not a security sandbox.
-- Screenshots are sent to the selected cloud provider only when `/vision on` is enabled and a compatible model is selected.
+NEXUS can control a Windows desktop. Review commands before approving destructive operations, do not run it with elevated privileges unless required, and test automation on non-sensitive files and applications first.

@@ -1,5 +1,7 @@
 # NEXUS
 
+[Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Testing](docs/TESTING.md)
+
 [![NEXUS 1.1 validation](https://github.com/melo31022/NEXUS/actions/workflows/tests.yml/badge.svg?branch=dev-1.1)](https://github.com/melo31022/NEXUS/actions/workflows/tests.yml?query=branch%3Adev-1.1)
 
 **An AI-powered computer-use agent for Windows, built with Python and cloud AI providers.**
