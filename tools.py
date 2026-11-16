@@ -43,25 +43,28 @@ class DesktopTools:
     def mouse_move(x: int, y: int) -> str:
         x, y = DesktopTools._check_coordinates(x, y)
         pyautogui.moveTo(x, y, duration=0.2)
-        return f"Cursor movido para ({x}, {y})."
+        actual = pyautogui.position()
+        if (int(actual.x), int(actual.y)) != (x, y):
+            return f"Movimento solicitado para ({x}, {y}), mas a posição observada foi ({int(actual.x)}, {int(actual.y)})."
+        return f"Cursor confirmado em ({x}, {y})."
 
     @staticmethod
     def left_click(x: int, y: int) -> str:
         x, y = DesktopTools._check_coordinates(x, y)
         pyautogui.click(x, y, button="left")
-        return f"Clique esquerdo em ({x}, {y})."
+        return f"Evento de clique esquerdo enviado para ({x}, {y}); o efeito no aplicativo não foi verificado."
 
     @staticmethod
     def right_click(x: int, y: int) -> str:
         x, y = DesktopTools._check_coordinates(x, y)
         pyautogui.click(x, y, button="right")
-        return f"Clique direito em ({x}, {y})."
+        return f"Evento de clique direito enviado para ({x}, {y}); o efeito no aplicativo não foi verificado."
 
     @staticmethod
     def double_click(x: int, y: int) -> str:
         x, y = DesktopTools._check_coordinates(x, y)
         pyautogui.doubleClick(x, y, button="left")
-        return f"Duplo clique em ({x}, {y})."
+        return f"Evento de duplo clique enviado para ({x}, {y}); o efeito no aplicativo não foi verificado."
 
     @staticmethod
     def scroll(amount: int, x: int | None = None, y: int | None = None) -> str:
@@ -71,14 +74,31 @@ class DesktopTools:
             x, y = DesktopTools._check_coordinates(x, y)
             pyautogui.moveTo(x, y, duration=0.1)
         pyautogui.scroll(int(amount))
-        return f"Rolagem executada: {int(amount)} linhas."
+        return f"Evento de rolagem enviado: {int(amount)} linhas; o efeito na janela não foi verificado."
 
     @staticmethod
     def activate_window(title: str) -> str:
         query = str(title).strip()
         if not query or len(query) > 200:
             raise ValueError("Informe parte do título da janela (até 200 caracteres).")
-        matches = [window for window in gw.getAllWindows() if query.casefold() in (window.title or "").casefold()]
+        normalized = query.casefold()
+        aliases = {
+            "notepad": ("notepad", "bloco de notas"),
+            "notepad.exe": ("notepad", "bloco de notas"),
+            "bloco de notas": ("notepad", "bloco de notas"),
+            "calculator": ("calculator", "calculadora", "calc"),
+            "calculadora": ("calculator", "calculadora", "calc"),
+            "calc": ("calculator", "calculadora", "calc"),
+            "calc.exe": ("calculator", "calculadora", "calc"),
+            "explorer": ("explorer", "file explorer", "explorador de arquivos"),
+            "explorer.exe": ("explorer", "file explorer", "explorador de arquivos"),
+            "explorador de arquivos": ("explorer", "file explorer", "explorador de arquivos"),
+        }
+        search_terms = aliases.get(normalized, (normalized,))
+        matches = [
+            window for window in gw.getAllWindows()
+            if any(term in (window.title or "").casefold() for term in search_terms)
+        ]
         if not matches:
             return f"Nenhuma janela corresponde ao título: {query}"
         try:
@@ -101,7 +121,7 @@ class DesktopTools:
             pyautogui.hotkey("ctrl", "v")
         else:
             pyautogui.write(text, interval=0.01)
-        return f"Texto enviado ao campo ativo ({len(text)} caracteres)."
+        return f"Texto enviado ao campo ativo ({len(text)} caracteres); o conteúdo no aplicativo não foi lido de volta para verificação."
 
     @staticmethod
     def press_key(key: str) -> str:
