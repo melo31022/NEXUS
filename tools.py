@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import pyautogui
+from task_recovery import redact_sensitive_text
 import pygetwindow as gw
 
 try:
@@ -234,7 +235,7 @@ class DesktopTools:
             raise PermissionError("Por segurança, a leitura está limitada ao workspace/diretório do projeto. Defina /workspace para mudar o escopo.") from exc
         lower_name = target.name.casefold()
         protected = (
-            lower_name == ".env" or lower_name.startswith(".env.")
+            lower_name == ".env" or (lower_name.startswith(".env.") and lower_name != ".env.example")
             or any(token in lower_name for token in ("apikey", "api_key", "api-key", "credential", "password", "secret"))
             or lower_name in {"token", "token.txt", "access_token.txt", "refresh_token.txt"}
             or target.suffix.casefold() in {".pem", ".key", ".p12", ".pfx"}
@@ -254,7 +255,7 @@ class DesktopTools:
         except UnicodeDecodeError:
             content = raw.decode("cp1252")
         truncated = len(content) > limit
-        excerpt = content[:limit]
+        excerpt = redact_sensitive_text(content[:limit])
         suffix = f"\n[conteúdo truncado; {len(content) - limit} caracteres omitidos]" if truncated else ""
         return f"Arquivo: {target}\n{excerpt}{suffix}"
 

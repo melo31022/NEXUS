@@ -65,9 +65,11 @@ class TaskRecoveryTests(unittest.TestCase):
 
     def test_sensitive_text_redaction_handles_bearer_and_key_patterns(self):
         value = redact_sensitive_text("Authorization: Bearer abc123 api_key=secret456")
+        value += redact_sensitive_text('{"OPENROUTER_API_KEY": "sk-or-v1-012345678901234567890123"}')
         self.assertNotIn("abc123", value)
         self.assertNotIn("secret456", value)
         self.assertIn("[redacted]", value)
+        self.assertNotIn("sk-or-v1-012345678901234567890123", value)
 
     def test_only_read_only_operations_are_retry_safe(self):
         with tempfile.TemporaryDirectory() as temp:

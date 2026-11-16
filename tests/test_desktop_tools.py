@@ -17,9 +17,11 @@ class DesktopToolsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, tempfile.TemporaryDirectory() as outside:
             root = Path(temp)
             sample = root / "sample.txt"
-            sample.write_text("NEXUS test content", encoding="utf-8")
+            sample.write_text("NEXUS test content\nOPENROUTER_API_KEY=sk-or-v1-012345678901234567890123", encoding="utf-8")
             result = DesktopTools.read_text_file(str(sample), directory=str(root))
             self.assertIn("NEXUS test content", result)
+            self.assertNotIn("sk-or-v1-012345678901234567890123", result)
+            self.assertIn("[redacted]", result)
 
             with self.assertRaises(PermissionError):
                 DesktopTools.read_text_file(str(Path(outside) / "outside.txt"), directory=str(root))

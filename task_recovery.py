@@ -93,7 +93,8 @@ class TaskJournal:
 def redact_sensitive_text(value: str) -> str:
     text = str(value)
     text = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._~+/-]+=*", r"\1[redacted]", text)
-    return re.sub(r"(?i)((?:api[_ -]?key|token|password|secret)\s*[:=]\s*)[^\s,;]+", r"\1[redacted]", text)
+    text = re.sub(r"""(?i)(["']?(?:api[_ -]?key|token|password|secret)["']?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)""", r"\1[redacted]", text)
+    return re.sub(r"(?i)\b(?:gsk_|sk-or-v1-|sk-)[A-Za-z0-9_-]{20,}", "[redacted]", text)
 
 
 def resumable_actions(state: dict[str, Any]) -> list[dict[str, Any]]:
