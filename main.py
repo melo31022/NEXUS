@@ -350,6 +350,9 @@ class NexusSession:
             console.print(f"[red]Não foi possível salvar o endpoint: {type(exc).__name__}: {exc}[/red]")
 
     def test_connection(self) -> None:
+        import time
+        from providers import adapt_chat_payload, request_with_retry, sanitized_api_error
+
         provider = self.provider
         if provider.requires_api_key and not provider.api_key:
             console.print("[yellow]Chave ausente. Use /key set ou /setup.[/yellow]")
@@ -362,20 +365,26 @@ class NexusSession:
             "max_tokens": 8,
             "temperature": 0,
         }
-        from providers import adapt_chat_payload
         payload = adapt_chat_payload(provider.name, self.model, payload)
         console.print(f"Testando [cyan]{provider.label}[/cyan] • [dim]{self.model}[/dim]...")
+        started = time.monotonic()
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=(8, 25))
+            response = request_with_retry(
+                lambda: requests.post(url, headers=headers, json=payload, timeout=(8, 25)),
+                retries=2,
+            )
+            elapsed = time.monotonic() - started
             if not response.ok:
-                from providers import sanitized_api_error
                 console.print(f"[red]{sanitized_api_error(response.status_code, response.text)}[/red]")
                 return
             data = response.json()
             answer = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            console.print(f"[green]Conexão e autenticação aprovadas.[/green] Resposta: {str(answer)[:120] or '(resposta vazia)'}")
+            usage = data.get("usage", {})
+            total = usage.get("total_tokens") if isinstance(usage, dict) else None
+            suffix = f" • {total} tokens" if total is not None else ""
+            console.print(f"[green]Conexão e autenticação aprovadas.[/green] {elapsed:.2f}s{suffix}. Resposta: {str(answer)[:120] or '(resposta vazia)'}")
         except (requests.RequestException, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
-            console.print(f"[red]Falha no teste: {type(exc).__name__}: {exc}[/red]")
+            console.print(f"[red]Falha no teste: {type(exc).__name__}[/red]")
 
     def run_modeltest(self) -> None:
         provider = self.provider
