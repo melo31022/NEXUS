@@ -20,7 +20,7 @@ Last updated: 2026-11-16
 - [x] Enable exact OpenRouter Nemotron 3.5 Super VL model IDs for opt-in vision.
 - [x] Add `/resume <id>` with explicit confirmation, completed/uncertain action summary and linked follow-up journal.
 - [x] Strengthen Token Guard for oversized recent turns, compact tool/assistant outputs, enforce the context budget and display provider usage when returned.
-- [x] Configure CI matrix for Ubuntu, Windows x64 and Windows ARM64 runners.
+- [x] Configure CI matrix for Ubuntu, Windows x64 and Windows ARM64 runners; Windows jobs install the full desktop dependency set.
 - [x] Align DeepSeek endpoint/model defaults with its current API and preserve reasoning continuation fields for DeepSeek/OpenRouter.
 - [x] Add Cerebras-specific completion-token parameter mapping and GLM 4.7 preserved-thinking defaults.
 - [ ] Confirm GitHub Actions results for the current CI matrix.

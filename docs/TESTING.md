@@ -8,7 +8,7 @@ The GitHub Actions workflow runs the unit-test suite and Python compilation on:
 - Windows x64
 - Windows ARM64 (windows-11-arm)
 
-These jobs validate Python behavior and import-independent code paths. They do not automate the desktop or verify live API credentials.
+Windows jobs also install the full desktop dependency set and run mocked tests for text-file access, window-title aliases and cursor-position reporting. These jobs do not perform real clicks, type into applications or verify live API credentials.
 
 ## Local unit tests (CMD)
 
