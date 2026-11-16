@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -151,17 +152,14 @@ def save_provider_settings(
     if provider_name not in PROVIDERS:
         raise ValueError(f"Provedor desconhecido: {provider_name}")
     current = PROVIDERS[provider_name]
-    values = _SAVED_SETTINGS.setdefault("providers", {}).setdefault(provider_name, {})
+    candidate = deepcopy(_SAVED_SETTINGS)
+    values = candidate.setdefault("providers", {}).setdefault(provider_name, {})
     if api_key is not _UNSET:
         key = str(api_key).strip()
         if key:
             values["api_key"] = key
-            if current.api_key_env:
-                os.environ[current.api_key_env] = key
         else:
             values.pop("api_key", None)
-            if current.api_key_env:
-                os.environ.pop(current.api_key_env, None)
     if model is not _UNSET:
         selected_model = str(model).strip()
         if not selected_model:
@@ -173,17 +171,25 @@ def save_provider_settings(
             raise ValueError("O endpoint precisa ser uma URL HTTPS válida.")
         values["base_url"] = endpoint
     if not values:
-        _SAVED_SETTINGS.get("providers", {}).pop(provider_name, None)
-    save_secure_settings(_SAVED_SETTINGS)
+        candidate.get("providers", {}).pop(provider_name, None)
+    # Save first. A failed DPAPI write must not partially update live settings.
+    save_secure_settings(candidate)
+    _SAVED_SETTINGS.clear()
+    _SAVED_SETTINGS.update(candidate)
+    if api_key is not _UNSET and current.api_key_env:
+        os.environ.pop(current.api_key_env, None)
     updated = replace(
         current,
-        api_key=(str(values.get("api_key", current.api_key) or "") if api_key is _UNSET else str(api_key).strip()),
+        api_key=(
+            str(values.get("api_key", current.api_key) or "")
+            if api_key is _UNSET
+            else str(values.get("api_key", "") or "")
+        ),
         default_model=str(values.get("model", current.default_model)),
         base_url=str(values.get("base_url", current.base_url)),
     )
     PROVIDERS[provider_name] = updated
     return updated
-
 
 def save_default_provider(name: str) -> None:
     global DEFAULT_PROVIDER
