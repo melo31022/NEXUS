@@ -83,7 +83,8 @@ class TaskRecoveryTests(unittest.TestCase):
             journal.finish("interrupted")
             records = TaskJournal.recent(Path(temp))
             self.assertEqual(records[0]["status"], "interrupted")
-            self.assertIn("[redacted]", records[0]["actions"][0]["result"])
+            self.assertIn("[output omitted", records[0]["actions"][0]["result"])
+            self.assertNotIn("abc123", str(records[0]["actions"][0]))
             self.assertEqual(len(resumable_actions(records[0])), 0)
 
     def test_sensitive_text_redaction_handles_bearer_and_key_patterns(self):
