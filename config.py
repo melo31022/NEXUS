@@ -196,6 +196,9 @@ def save_default_provider(name: str) -> None:
     provider_name = name.strip().lower()
     if provider_name not in PROVIDERS:
         raise ValueError(f"Provedor desconhecido: {provider_name}")
-    _SAVED_SETTINGS["default_provider"] = provider_name
-    save_secure_settings(_SAVED_SETTINGS)
+    candidate = deepcopy(_SAVED_SETTINGS)
+    candidate["default_provider"] = provider_name
+    save_secure_settings(candidate)
+    _SAVED_SETTINGS.clear()
+    _SAVED_SETTINGS.update(candidate)
     DEFAULT_PROVIDER = provider_name
