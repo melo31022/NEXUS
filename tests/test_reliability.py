@@ -1,0 +1,74 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+import requests
+
+from providers import request_with_retry
+from task_recovery import TaskJournal, resumable_actions
+from token_guard import compact_messages, estimate_messages_tokens
+
+
+class TokenGuardTests(unittest.TestCase):
+    def test_estimates_and_preserves_recent_context(self):
+        messages = [{"role": "system", "content": "rules"}]
+        messages += [{"role": "user", "content": f"old message {i} " + ("x" * 300)} for i in range(10)]
+        messages += [{"role": "user", "content": "latest request"}]
+        compacted, estimate, changed = compact_messages(messages, budget=500, preserve_recent=3)
+        self.assertTrue(changed)
+        self.assertLess(estimate, estimate_messages_tokens(messages))
+        self.assertEqual(compacted[0]["role"], "system")
+        self.assertIn("latest request", str(compacted[-1]["content"]))
+
+    def test_small_context_is_unchanged(self):
+        messages = [{"role": "system", "content": "rules"}, {"role": "user", "content": "hello"}]
+        result, _, changed = compact_messages(messages, budget=1000)
+        self.assertFalse(changed)
+        self.assertEqual(result, messages)
+
+
+class TaskRecoveryTests(unittest.TestCase):
+    def test_checkpoint_persists_and_redacts_secrets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            journal = TaskJournal("test task", root=Path(temp))
+            journal.begin_step(2)
+            journal.record_action("powershell_execute", {"command": "echo secret"}, "api_key=abc123", success=False)
+            journal.finish("interrupted")
+            records = TaskJournal.recent(Path(temp))
+            self.assertEqual(records[0]["status"], "interrupted")
+            self.assertIn("[redacted]", records[0]["actions"][0]["result"])
+            self.assertEqual(len(resumable_actions(records[0])), 0)
+
+    def test_only_read_only_operations_are_retry_safe(self):
+        with tempfile.TemporaryDirectory() as temp:
+            journal = TaskJournal("read test", root=Path(temp))
+            journal.record_action("get_screen_info", {}, "{}", success=False)
+            journal.record_action("left_click", {"x": 10, "y": 10}, "clicked", success=False)
+            record = TaskJournal.recent(Path(temp))[0]
+            self.assertEqual([a["name"] for a in resumable_actions(record)], ["get_screen_info"])
+
+
+class ProviderRetryTests(unittest.TestCase):
+    def test_retry_after_header_is_honored(self):
+        first = requests.Response()
+        first.status_code = 429
+        first.headers["Retry-After"] = "2"
+        second = requests.Response()
+        second.status_code = 200
+        responses = iter([first, second])
+        delays = []
+        result = request_with_retry(lambda: next(responses), sleep=delays.append)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(delays, [2.0])
+
+    def test_non_transient_error_is_not_retried(self):
+        response = requests.Response()
+        response.status_code = 401
+        calls = []
+        result = request_with_retry(lambda: calls.append(1) or response, sleep=lambda _: None)
+        self.assertEqual(result.status_code, 401)
+        self.assertEqual(len(calls), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
