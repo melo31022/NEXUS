@@ -27,6 +27,11 @@ class NexusCoreTests(unittest.TestCase):
     def test_read_only_command_does_not_require_confirmation(self):
         self.assertFalse(command_needs_confirmation("Get-ChildItem $HOME"))
 
+    def test_format_list_is_read_only(self):
+        self.assertFalse(command_needs_confirmation("Get-ChildItem -Path $HOME | Format-List Name, Length"))
+        self.assertFalse(command_needs_confirmation("Get-ChildItem | Format-Table Name"))
+        self.assertTrue(command_needs_confirmation("format C:"))
+
     def test_destructive_commands_require_confirmation(self):
         self.assertTrue(command_needs_confirmation("Remove-Item .\\temp -Recurse"))
         self.assertTrue(command_needs_confirmation("Restart-Computer"))
