@@ -10,7 +10,7 @@ Last updated: 2026-11-16
 
 ## Implementation batch
 
-- [x] Add `/modeltest` for live chat, JSON, short-context and tool-call emission checks.
+- [x] Add `/modeltest` for live chat, JSON, Planner, short-context and multiple tool-call emission checks.
 - [x] Inspect tool-call requests without executing them.
 - [x] Require confirmation before API tests and separate consent before sending a screenshot.
 - [x] Add provider/model/mode/workspace context and a bounded workspace filename snapshot to agent requests.

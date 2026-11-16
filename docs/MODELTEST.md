@@ -2,7 +2,7 @@
 
 `/modeltest` runs live, non-destructive checks against the selected provider and model.
 
-It checks a basic chat response, JSON-mode output, short-context retention, and whether the model emits a tool call. The probe tool is fictitious: NEXUS inspects the returned tool-call request but never executes it.
+It checks a basic chat response, JSON-mode output, a three-step Planner response, short-context retention, and whether the model emits two tool calls in one response. The probe tools are fictitious: NEXUS inspects the returned tool-call requests but never executes them.
 
 If the active model is configured for image input, the command asks separately before capturing and sending the desktop. Close private windows before approving. The screenshot is also saved locally.
 

@@ -173,4 +173,4 @@ No license has been selected yet. Until a license is added, the default copyrigh
 
 ## ModelTest
 
-Run `/modeltest` to make live, non-destructive capability checks against the selected provider/model. It asks for confirmation because requests may consume API quota. Tool calls are inspected but never executed. Sending a desktop screenshot requires a separate explicit confirmation. Model self-identification is not treated as proof of provider/model identity. See [docs/MODELTEST.md](docs/MODELTEST.md).
+Run `/modeltest` to make live, non-destructive capability checks against the selected provider/model. It asks for confirmation because the six checks may consume API quota. Planner output and two tool calls are tested; tool calls are inspected but never executed. Sending a desktop screenshot requires a separate explicit confirmation. Model self-identification is not treated as proof of provider/model identity. See [docs/MODELTEST.md](docs/MODELTEST.md).

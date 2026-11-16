@@ -80,6 +80,16 @@ def run_model_test(provider: Any, model: str, image_data_url: str | None = None)
     json_status = "PASS" if json_ok else ("PARTIAL" if data is None and unsupported else "FAIL")
     results.append(_record("JSON mode", json_status, "Objeto JSON válido recebido." if json_ok else (error or "JSON solicitado não foi retornado."), elapsed))
 
+    data, elapsed, error = _request(
+        provider, model,
+        [system, {"role": "user", "content": "Monte um plano de exatamente três etapas para organizar uma pasta de documentos. Responda com uma linha por etapa, começando exatamente por STEP-1, STEP-2 e STEP-3."}],
+        max_tokens=96,
+    )
+    answer = str(_message(data).get("content", "")) if data else ""
+    planner_ok = all(marker in answer for marker in ("STEP-1", "STEP-2", "STEP-3"))
+    results.append(_record("Planner", "PASS" if planner_ok else "FAIL",
+                           "Plano de três etapas estruturado." if planner_ok else (error or "O modelo não produziu as três etapas solicitadas."), elapsed))
+
     first, elapsed_first, error_first = _request(
         provider, model,
         [system, {"role": "user", "content": "Memorize este código: NEXUS-7319-ORBIT. Responda apenas entendido."}],
@@ -102,28 +112,34 @@ def run_model_test(provider: Any, model: str, image_data_url: str | None = None)
     else:
         results.append(_record("Contexto curto", "FAIL", error_first, elapsed_first))
 
-    probe_tool = [{
-        "type": "function",
-        "function": {
-            "name": "nexus_modeltest_probe",
-            "description": "Ferramenta fictícia de teste; nunca é executada.",
+    probe_tool = [
+        {"type": "function", "function": {
+            "name": "nexus_modeltest_probe_a",
+            "description": "Primeira ferramenta fictícia de teste; nunca é executada.",
             "parameters": {"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]},
-        },
-    }]
+        }},
+        {"type": "function", "function": {
+            "name": "nexus_modeltest_probe_b",
+            "description": "Segunda ferramenta fictícia de teste; nunca é executada.",
+            "parameters": {"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]},
+        }},
+    ]
     data, elapsed, error = _request(
         provider, model,
-        [system, {"role": "user", "content": "Chame nexus_modeltest_probe uma vez com value=NEXUS_TEST. Não responda em texto."}],
+        [system, {"role": "user", "content": "Chame nexus_modeltest_probe_a e nexus_modeltest_probe_b exatamente uma vez cada, ambos com value=NEXUS_TEST. Não responda em texto."}],
         tools=probe_tool, tool_choice="auto", max_tokens=96,
     )
     calls = _message(data).get("tool_calls", []) if data else []
-    tool_ok = isinstance(calls, list) and any(
-        isinstance(call, dict) and isinstance(call.get("function"), dict)
-        and call["function"].get("name") == "nexus_modeltest_probe" for call in calls
-    )
+    emitted = {
+        call.get("function", {}).get("name")
+        for call in calls if isinstance(call, dict) and isinstance(call.get("function"), dict)
+    } if isinstance(calls, list) else set()
+    expected = {"nexus_modeltest_probe_a", "nexus_modeltest_probe_b"}
+    tool_ok = expected.issubset(emitted)
     unsupported = any(f"HTTP {code}" in error for code in (400, 404, 422))
-    tool_status = "PASS" if tool_ok else ("PARTIAL" if data is None and unsupported else "FAIL")
-    results.append(_record("Tool calling", tool_status,
-                           "Chamada fictícia emitida; ferramenta não executada." if tool_ok else (error or "Chamada não emitida."), elapsed))
+    tool_status = "PASS" if tool_ok else ("PARTIAL" if (data is None and unsupported) or emitted else "FAIL")
+    results.append(_record("Operator tool calls", tool_status,
+                           "As duas chamadas fictícias foram emitidas; nenhuma ferramenta foi executada." if tool_ok else (error or f"Chamadas emitidas: {len(emitted)}/2."), elapsed))
 
     if not image_data_url:
         results.append(_record("Vision", "SKIP", "Nenhuma captura foi compartilhada para este teste."))

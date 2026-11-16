@@ -95,7 +95,7 @@ Nunca publique o arquivo `.env` nem compartilhe suas chaves de API.
 
 ## ModelTest
 
-Use `/modeltest` para executar chamadas reais de avaliação ao modelo ativo. O comando pede confirmação porque pode consumir a cota da API. Ele verifica chat, JSON, contexto curto e emissão de tool calls sem executar ferramentas. Se o modelo estiver cadastrado para visão, o NEXUS pede um segundo consentimento antes de capturar e enviar a tela. A autoidentificação verbal do modelo não é usada como prova de identidade. Consulte [docs/MODELTEST.md](docs/MODELTEST.md).
+Use `/modeltest` para executar chamadas reais de avaliação ao modelo ativo. O comando pede confirmação porque pode consumir a cota da API. Ele verifica chat, JSON, planejamento, contexto curto e emissão de duas tool calls sem executar ferramentas. Se o modelo estiver cadastrado para visão, o NEXUS pede um segundo consentimento antes de capturar e enviar a tela. A autoidentificação verbal do modelo não é usada como prova de identidade. Consulte [docs/MODELTEST.md](docs/MODELTEST.md).
 
 ## Token Guard
 
