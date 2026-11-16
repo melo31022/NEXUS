@@ -241,6 +241,8 @@ class NexusAgent:
             if text_to_type is not None:
                 if not isinstance(text_to_type, str):
                     return "Erro: o texto opcional precisa ser uma string."
+                if "janela ativada" not in opened.casefold():
+                    return f"{opened} Não digitei o texto porque não consegui confirmar que a janela do aplicativo recebeu foco."
                 typed = DesktopTools.type_text(text=text_to_type)
                 return f"{opened}\n{typed}"
             return opened
