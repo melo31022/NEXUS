@@ -380,7 +380,7 @@ class NexusSession:
             console.print("[yellow]Chave ausente. Use /key set ou /setup antes do ModelTest.[/yellow]")
             return
         console.print(Panel(
-            "O ModelTest fará até cinco chamadas de avaliação e pode consumir a cota da API. "
+            "O ModelTest fará cinco verificações (até seis chamadas se a visão for aprovada) e pode consumir a cota da API. "
             "Chamadas de ferramentas serão apenas inspecionadas, nunca executadas.",
             title="ModelTest • confirmação", border_style="blue"
         ))

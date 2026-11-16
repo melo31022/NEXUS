@@ -76,7 +76,8 @@ def run_model_test(provider: Any, model: str, image_data_url: str | None = None)
         json_ok = isinstance(parsed, dict) and parsed.get("ok") is True
     except (ValueError, TypeError):
         json_ok = False
-    json_status = "PASS" if json_ok else ("PARTIAL" if data is None and "HTTP 400" in error else "FAIL")
+    unsupported = any(f"HTTP {code}" in error for code in (400, 404, 422))
+    json_status = "PASS" if json_ok else ("PARTIAL" if data is None and unsupported else "FAIL")
     results.append(_record("JSON mode", json_status, "Objeto JSON válido recebido." if json_ok else (error or "JSON solicitado não foi retornado."), elapsed))
 
     first, elapsed_first, error_first = _request(
@@ -119,7 +120,8 @@ def run_model_test(provider: Any, model: str, image_data_url: str | None = None)
         isinstance(call, dict) and isinstance(call.get("function"), dict)
         and call["function"].get("name") == "nexus_modeltest_probe" for call in calls
     )
-    tool_status = "PASS" if tool_ok else ("PARTIAL" if data is None and "HTTP 400" in error else "FAIL")
+    unsupported = any(f"HTTP {code}" in error for code in (400, 404, 422))
+    tool_status = "PASS" if tool_ok else ("PARTIAL" if data is None and unsupported else "FAIL")
     results.append(_record("Tool calling", tool_status,
                            "Chamada fictícia emitida; ferramenta não executada." if tool_ok else (error or "Chamada não emitida."), elapsed))
 

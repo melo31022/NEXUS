@@ -150,15 +150,19 @@ class NexusAgent:
             item for item in self.messages
             if not (item.get("role") == "system" and str(item.get("content", "")).startswith(context_marker))
         ]
-        active_workspace = self.workspace_dir or str(DesktopTools._desktop_directory())
-        try:
-            visible_entries = sorted(
-                (f"{'[DIR]' if item.is_dir() else '[FILE]'} {item.name}" for item in Path(active_workspace).iterdir()),
-                key=str.casefold,
-            )[:40]
-            directory_snapshot = "\n".join(visible_entries) if visible_entries else "(pasta vazia)"
-        except OSError as exc:
-            directory_snapshot = f"(listagem indisponível: {type(exc).__name__})"
+        workspace_label = self.workspace_dir or f"{DesktopTools._desktop_directory()} (workspace padrão)"
+        directory_to_inspect = Path(self.workspace_dir) if self.workspace_dir else Path.cwd()
+        if mode_name == "operator":
+            try:
+                visible_entries = sorted(
+                    (f"{'[DIR]' if item.is_dir() else '[FILE]'} {item.name}" for item in directory_to_inspect.iterdir()),
+                    key=str.casefold,
+                )[:40]
+                directory_snapshot = "\n".join(visible_entries) if visible_entries else "(pasta vazia)"
+            except OSError as exc:
+                directory_snapshot = f"(listagem indisponível: {type(exc).__name__})"
+        else:
+            directory_snapshot = "(não enumerado: este modo não possui ferramentas do computador)"
         tool_names = ", ".join((
             "mouse_move", "left_click", "right_click", "double_click", "scroll", "activate_window",
             "type_text", "press_key", "key_combination", "list_directory", "write_text_file",
@@ -169,9 +173,10 @@ class NexusAgent:
             f"{context_marker}\n"
             f"Provedor ativo: {provider.name} ({provider.label}). Modelo configurado: {self.model}. "
             f"Modo atual: {mode_name}. Visão habilitada: {self.vision_enabled}. "
-            f"Diretório de execução: {Path.cwd()}. Workspace: {active_workspace}. "
+            f"Diretório de execução: {Path.cwd()}. Workspace de arquivos: {workspace_label}. "
+            f"Diretório listado: {directory_to_inspect if mode_name == 'operator' else 'nenhum'}. "
             f"Ferramentas disponíveis neste modo: {tool_names}.\n"
-            f"Entradas visíveis no workspace (apenas nomes; não foram lidos):\n{directory_snapshot}\n"
+            f"Entradas visíveis (apenas nomes; não foram lidos):\n{directory_snapshot}\n"
             "Não afirme ter inspecionado o conteúdo de arquivos apenas porque seus nomes aparecem nesta lista. "
             "Use a ferramenta apropriada para ler ou verificar arquivos. Este snapshot é parcial e limitado a 40 entradas."
         )
