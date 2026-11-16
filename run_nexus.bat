@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title NEXUS 1.0
+title NEXUS 1.1
 
 set "PYTHON="
 where py >nul 2>nul
@@ -37,9 +37,9 @@ if errorlevel 1 (
 
 if not exist ".venv\nexus-deps-installed" (
     echo [NEXUS] Instalando dependencias (primeira inicializacao)...
-    ".venv\Scripts\python.exe" -m pip install --upgrade pip
+    ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --upgrade pip
     if errorlevel 1 goto :error
-    ".venv\Scripts\python.exe" -m pip install -r requirements.txt
+    ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt
     if errorlevel 1 goto :error
     type nul > ".venv\nexus-deps-installed"
 )
@@ -49,6 +49,8 @@ if not exist ".env" if exist ".env.example" (
     echo [NEXUS] Arquivo .env criado. Configure sua chave de API antes de consultar os modelos.
 )
 
+rem Start the interactive app on a clean screen, separate from setup output.
+cls
 ".venv\Scripts\python.exe" main.py
 if errorlevel 1 goto :error
 endlocal
