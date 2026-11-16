@@ -159,12 +159,15 @@ nexus/
 ├── tests/
 │   ├── test_core.py
 │   ├── test_reliability.py
-│   └── test_model_test.py
+│   ├── test_model_test.py
+│   └── test_desktop_tools.py
 ├── README.md
 ├── README.pt-BR.md
 ├── ROADMAP.md
 ├── CHANGELOG.md
 ├── DEVELOPMENT_PROGRESS.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── VERSION
 ```
 

@@ -25,6 +25,7 @@ Last updated: 2026-11-16
 - [x] Add Cerebras-specific completion-token parameter mapping and GLM 4.7 preserved-thinking defaults.
 - [ ] Confirm GitHub Actions results for the current CI matrix.
 - [x] Add CI status badge and links to testing/development-status documentation in the GitHub README.
+- [x] Add security/contribution policies and issue templates; ensure private file contents and desktop action arguments are omitted from persistent logs.
 - [ ] Run manual acceptance tests on Windows 10/11 ARM64.
 - [ ] Complete remaining Token Guard, Task Recovery, Computer Use, Vision, provider compatibility and documentation work.
 

@@ -1,5 +1,7 @@
 # NEXUS 1.1
 
+[Segurança](SECURITY.md) · [Contribuição](CONTRIBUTING.md) · [Testes](docs/TESTING.md)
+
 **Agente de uso do computador para Windows, desenvolvido em Python e conectado a provedores de IA na nuvem.**
 
 O NEXUS interpreta pedidos, planeja tarefas e pode interagir com o Windows usando ferramentas locais. A inferência de IA é feita exclusivamente nos provedores em nuvem selecionados; o projeto não executa modelos localmente.
