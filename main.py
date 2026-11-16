@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import os
+import getpass
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Any
 
 import requests
@@ -165,6 +167,10 @@ class NexusSession:
         rows = [
             ("/providers", tr("cmd_providers", self.language)),
             ("/provider <name>", tr("cmd_provider", self.language)),
+            ("/setup [provider]", "Configura chave, endpoint e modelo pelo CMD; a chave não aparece na tela."),
+            ("/key set|remove [provider]", "Adiciona ou remove uma chave de API com entrada oculta."),
+            ("/endpoint [https://...]", "Mostra ou altera o endpoint do provedor ativo."),
+            ("/test", "Testa autenticação, endpoint e modelo com uma requisição curta."),
             ("/agents", tr("cmd_agents", self.language)),
             ("/agent <number|id>", tr("cmd_agent", self.language)),
             ("/models", "Alias: /agents"),
@@ -221,6 +227,132 @@ class NexusSession:
         console.print(table)
         console.print("Selecione com [cyan]/agent número[/cyan] ou [cyan]/agent model-id[/cyan].")
 
+    def setup_provider(self, provider_name: str | None = None) -> None:
+        name = (provider_name or self.provider_name).strip().lower()
+        if name not in config.PROVIDERS:
+            console.print("[yellow]Provedor desconhecido. Use /providers.[/yellow]")
+            return
+        current = config.get_provider(name)
+        console.print(Panel(
+            f"Provedor: [cyan]{current.label}[/cyan]\n"
+            "A chave será digitada sem aparecer na tela e salva criptografada para sua conta do Windows.",
+            title="Configuração segura do provedor", border_style="blue"
+        ))
+        try:
+            entered_key = getpass.getpass("Chave de API (Enter mantém a atual): ").strip()
+            endpoint = console.input(f"Endpoint HTTPS [{current.normalized_base_url()}]: ").strip()
+            model = console.input(f"ID do modelo [{current.default_model}]: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("[yellow]Configuração cancelada.[/yellow]")
+            return
+        endpoint = endpoint or current.normalized_base_url()
+        model = model or current.default_model
+        parsed = urlsplit(endpoint)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password or parsed.query or parsed.fragment:
+            console.print("[yellow]Endpoint inválido. Informe uma URL HTTPS sem usuário, senha, query ou fragmento.[/yellow]")
+            return
+        if not current.api_key and not entered_key:
+            console.print("[yellow]Nenhuma chave informada. Use /key set para adicionar uma.[/yellow]")
+            return
+        try:
+            updated = config.save_provider_settings(
+                name,
+                api_key=entered_key if entered_key else config._UNSET,
+                model=model,
+                base_url=endpoint,
+            )
+            config.save_default_provider(name)
+        except Exception as exc:
+            console.print(f"[red]Não foi possível salvar a configuração: {type(exc).__name__}: {exc}[/red]")
+            return
+        self.provider_name = name
+        self.model = updated.default_model
+        self.available_models = []
+        self.vision_enabled = False
+        self.reset_conversation()
+        console.print(f"[green]Configuração salva para {updated.label}. Chave: {'configurada' if updated.api_key else 'ausente'}.[/green]")
+        console.print("Use [cyan]/test[/cyan] para verificar a conexão e [cyan]/agents[/cyan] para consultar os modelos.")
+
+    def manage_key(self, argument: str) -> None:
+        parts = argument.split()
+        action = parts[0].lower() if parts else "status"
+        name = parts[1].lower() if len(parts) > 1 else self.provider_name
+        if name not in config.PROVIDERS:
+            console.print("[yellow]Provedor desconhecido. Use /providers.[/yellow]")
+            return
+        current = config.get_provider(name)
+        if action in {"status", "show"}:
+            console.print(f"Chave de {current.label}: {'configurada' if current.api_key else 'ausente'}. O valor nunca é exibido.")
+        elif action in {"set", "add"}:
+            try:
+                value = getpass.getpass(f"Nova chave para {current.label} (entrada oculta): ").strip()
+            except (KeyboardInterrupt, EOFError):
+                console.print("[yellow]Operação cancelada.[/yellow]")
+                return
+            if not value:
+                console.print("[yellow]Nenhuma chave foi informada; nada foi alterado.[/yellow]")
+                return
+            try:
+                updated = config.save_provider_settings(name, api_key=value)
+                console.print(f"[green]Chave salva com proteção do Windows para {updated.label}.[/green]")
+            except Exception as exc:
+                console.print(f"[red]Não foi possível salvar a chave: {type(exc).__name__}: {exc}[/red]")
+        elif action in {"remove", "delete", "clear"}:
+            answer = console.input(f"Remover a chave salva de {current.label}? [s/N]: ").strip().lower()
+            if answer not in {"s", "sim", "y", "yes"}:
+                console.print("[dim]Cancelado.[/dim]")
+                return
+            try:
+                config.save_provider_settings(name, api_key="")
+                console.print(f"[green]Chave salva removida de {current.label}.[/green]")
+            except Exception as exc:
+                console.print(f"[red]Não foi possível remover a chave: {type(exc).__name__}: {exc}[/red]")
+        else:
+            console.print("Use /key status, /key set [provider] ou /key remove [provider].")
+
+    def manage_endpoint(self, argument: str) -> None:
+        current = self.provider
+        if not argument:
+            console.print(f"Endpoint de {current.label}: [cyan]{current.normalized_base_url()}[/cyan]")
+            return
+        parsed = urlsplit(argument)
+        if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password or parsed.query or parsed.fragment:
+            console.print("[yellow]Informe uma URL HTTPS válida, sem credenciais, query ou fragmento.[/yellow]")
+            return
+        try:
+            updated = config.save_provider_settings(self.provider_name, base_url=argument)
+            self.available_models = []
+            self.reset_conversation()
+            console.print(f"[green]Endpoint atualizado: {updated.normalized_base_url()}[/green]")
+        except Exception as exc:
+            console.print(f"[red]Não foi possível salvar o endpoint: {type(exc).__name__}: {exc}[/red]")
+
+    def test_connection(self) -> None:
+        provider = self.provider
+        if provider.requires_api_key and not provider.api_key:
+            console.print("[yellow]Chave ausente. Use /key set ou /setup.[/yellow]")
+            return
+        url = provider.normalized_base_url() + "/chat/completions"
+        headers = {"Authorization": f"Bearer {provider.api_key}", "Content-Type": "application/json"}
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": "Responda somente: OK"}],
+            "max_tokens": 8,
+            "temperature": 0,
+        }
+        console.print(f"Testando [cyan]{provider.label}[/cyan] • [dim]{self.model}[/dim]...")
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=(8, 25))
+            if not response.ok:
+                from providers import sanitized_api_error
+                console.print(f"[red]{sanitized_api_error(response.status_code, response.text)}[/red]")
+                return
+            data = response.json()
+            answer = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            console.print(f"[green]Conexão e autenticação aprovadas.[/green] Resposta: {str(answer)[:120] or '(resposta vazia)'}")
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+            console.print(f"[red]Falha no teste: {type(exc).__name__}: {exc}[/red]")
+
     def initialize_project_instructions(self) -> None:
         target = BASE_DIR / "NEXUS.md"
         if target.exists():
@@ -270,6 +402,10 @@ class NexusSession:
                         return True
                     selected = match
                 self.model = selected
+                try:
+                    config.save_provider_settings(self.provider_name, model=selected)
+                except Exception as exc:
+                    console.print(f"[yellow]Modelo selecionado nesta sessão, mas não foi possível salvá-lo: {type(exc).__name__}[/yellow]")
                 self.vision_enabled = False
                 self.reset_conversation()
                 console.print(f"[green]Modelo/agente selecionado: {self.model}[/green]")
@@ -286,12 +422,24 @@ class NexusSession:
                 console.print(f"[green]Modo selecionado: {MODES[argument]['label']}[/green]")
         elif command == "/providers":
             self.show_providers()
+        elif command == "/setup":
+            self.setup_provider(argument or None)
+        elif command == "/key":
+            self.manage_key(argument)
+        elif command == "/endpoint":
+            self.manage_endpoint(argument)
+        elif command == "/test":
+            self.test_connection()
         elif command == "/provider":
             if argument.lower() not in config.PROVIDERS:
                 console.print("[yellow]Use /providers para ver os provedores em nuvem disponíveis.[/yellow]")
             else:
                 self.provider_name = argument.lower()
                 self.model = self.provider.default_model
+                try:
+                    config.save_default_provider(self.provider_name)
+                except Exception as exc:
+                    console.print(f"[yellow]Provedor selecionado nesta sessão, mas não foi possível salvar como padrão: {type(exc).__name__}[/yellow]")
                 self.available_models = []
                 self.vision_enabled = False
                 self.reset_conversation()
