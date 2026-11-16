@@ -161,7 +161,7 @@ class NexusAgent:
             "model": self.model, "messages": self.messages,
             "temperature": 0.2, "max_tokens": MAX_OUTPUT_TOKENS,
         }
-        if self.agent_profile["tools"]:
+        if self.agent_profile["tools"] and self.provider.supports_tools:
             payload["tools"] = TOOLS_SCHEMA
             # Ollama Cloud's OpenAI-compatible endpoint supports `tools`, but
             # documents `tool_choice` as unsupported. Groq accepts `auto`.
@@ -202,6 +202,7 @@ class NexusAgent:
             if not target.exists() or not target.is_dir():
                 return f"Workspace não definido: a pasta não existe ou não é um diretório: {target}"
             self.workspace_dir = str(target)
+            self.task_journal.set_workspace(self.workspace_dir)
             return f"Workspace definido para esta sessão: {target}"
         if name == "write_text_file":
             return DesktopTools.write_text_file(
