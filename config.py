@@ -176,8 +176,6 @@ def save_provider_settings(
     save_secure_settings(candidate)
     _SAVED_SETTINGS.clear()
     _SAVED_SETTINGS.update(candidate)
-    if api_key is not _UNSET and current.api_key_env:
-        os.environ.pop(current.api_key_env, None)
     updated = replace(
         current,
         api_key=(
