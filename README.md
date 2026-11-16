@@ -1,202 +1,241 @@
-# NEXUS 1.0
+# NEXUS
 
-<p align="center"><img src="assets/nexus_logo.png" alt="NEXUS" width="520"></p>
+**An AI-powered computer-use agent for Windows, built with Python and cloud AI providers.**
 
-[Leia esta documentação em Português (Brasil)](README.pt-BR.md).
+NEXUS is a Windows desktop agent that connects to cloud-hosted AI models to interpret requests, plan tasks, and interact with the operating system through available tools.
 
-**NEXUS** is a Windows computer-use agent powered by cloud-hosted AI models. It can inspect the desktop, plan tasks, operate mouse and keyboard, run PowerShell commands, and verify results. Model inference is performed by the selected cloud provider; NEXUS does not run local language models.
+NEXUS does not run language models locally. All AI inference is performed by the selected cloud provider.
 
-> Interface language is detected automatically from the Windows/user locale. Portuguese (Brazil) and English are included. Change it at any time with `/language pt`, `/language en`, or `/language auto`.
+[Português (Brasil)](README.pt-BR.md)
 
-## Highlights
+---
 
-- **Cloud providers:** Ollama Cloud and Groq Cloud, using fixed HTTPS API endpoints.
-- **Dynamic model catalog:** query provider models with `/agents` and select with `/agent`.
-- **Three modes:** `operator`, `planner`, and `chat`.
-- **Desktop tools:** mouse, keyboard, screenshots, window listing, application launching, and PowerShell.
-- **Optional vision:** screenshots are sent to the selected provider only when `/vision on` is enabled and the selected model is configured for image input.
-- **Workspace awareness:** keep project files in a selected workspace during the current session.
-- **Windows metadata:** screen dimensions and foreground-window information are measured separately from model visual interpretation.
-- **Safety checks:** potentially destructive PowerShell commands require local confirmation. These checks are heuristic, not a sandbox.
+## Features
 
-  ## Project status
+- **Cloud AI providers:** Supports Groq Cloud and Ollama Cloud.
+- **Dynamic model catalog:** Retrieves available models from the selected provider.
+- **Three operation modes:** Chat, Planner, and Operator.
+- **PowerShell integration:** Executes supported PowerShell commands.
+- **Workspace awareness:** Allows tasks to use a selected working directory.
+- **Screenshot support:** Captures desktop screenshots when requested.
+- **Optional vision:** Sends screenshots to compatible cloud models when enabled.
+- **Windows metadata:** Retrieves information about the screen and active window.
+- **Safety checks:** Uses heuristic checks and local confirmation for potentially destructive operations.
+- **Multilingual interface:** Supports Portuguese (Brazil) and English.
 
-**Current version: 1.0**
-
-NEXUS 1.0 establishes the core architecture for a cloud-powered Windows AI agent.
-
-Implemented capabilities include:
-- Cloud model providers: Groq Cloud and Ollama Cloud.
-- Chat, Planner and Operator modes.
-- PowerShell command execution.
-- File and workspace operations.
-- Screenshot and Windows window metadata support.
-- Tool execution with result reporting.
-- Basic safety checks for potentially destructive operations.
-
-Some capabilities depend on the selected model and provider. Tool-calling and image-input support are not guaranteed for every model.
-
-### Development roadmap
-
-The next planned release is **NEXUS 1.1**.
-
-Its main goals are:
-- Token Guard and context optimization.
-- Task checkpoints and recovery.
-- Improved computer interaction.
-- More reliable mouse and keyboard automation.
-- Better visual verification.
-- Improved error handling and execution safety.
-
-These roadmap items are planned improvements, not promises that they are already available in version 1.0.
+Some capabilities depend on the selected provider and model. Model availability does not guarantee tool-calling or image-input compatibility.
 
 ## Requirements
 
-- Windows 10 or Windows 11 with an interactive user session.
+- Windows 10 or Windows 11.
 - Python 3.11 or newer.
-- Internet connection and an API key for the selected provider.
+- Internet connection.
+- API key from a supported cloud provider.
 
 ## Quick Start
 
-1. Download and extract the project.
-2. Open the extracted `nexus` folder.
-3. Make sure Python 3.11 or newer is installed.
-4. Open a terminal in the project folder and run:
+1. Download the project from GitHub.
+2. Extract the downloaded archive.
+3. Open the extracted `nexus` folder.
+4. Make sure Python 3.11 or newer is installed.
+5. Open a terminal in the project folder.
+6. Run:
 
    ```powershell
    py -3.11 iniciar.py
    ```
 
-   Alternatively, use `python iniciar.py` if Python 3.11+ is available through that command.
+   Alternatively:
 
-5. On first launch, the launcher creates a virtual environment, installs the required dependencies, and creates `.env` from `.env.example` if it does not already exist.
-6. Open `.env`, add your provider's API key, and save the file.
-7. Launch NEXUS again using `py -3.11 iniciar.py`.
+   ```powershell
+   python iniciar.py
+   ```
 
-The first installation requires an internet connection and may take a few minutes. Later launches reuse the existing virtual environment and only install dependencies when necessary.
+7. On the first launch, the launcher creates a virtual environment, installs dependencies, and creates `.env` from `.env.example` if necessary.
+8. Open `.env` and add your API key.
+9. Save the file and launch NEXUS again.
 
-**Note:** Never share your `.env` file or publish your API keys.
+The first installation requires an internet connection and may take a few minutes.
 
-### Manual setup
+Later launches reuse the existing virtual environment and only install dependencies when necessary.
+
+## Manual Installation
+
+If you prefer to configure the environment manually:
 
 ```powershell
 py -3.11 -m venv .venv
+
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
+
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
 Copy-Item .env.example .env
+
 .\.venv\Scripts\python.exe main.py
 ```
 
-## Provider configuration
+## Provider Configuration
 
-Edit `.env`. Never commit this file or share its contents.
+Configure your provider in the `.env` file.
 
-### Ollama Cloud
-
-```dotenv
-NEXUS_PROVIDER=ollama
-OLLAMA_API_KEY=your_ollama_api_key
-OLLAMA_MODEL=beam
-```
+Never publish or share this file.
 
 ### Groq Cloud
 
-```dotenv
+```env
 NEXUS_PROVIDER=groq
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-The model catalog depends on provider availability and account access. A model appearing in `/agents` does not guarantee tool-calling or image-input support.
+### Ollama Cloud
 
-## Language
-
-`NEXUS_LANGUAGE=auto` detects the operating-system locale. You can set `NEXUS_LANGUAGE=pt` or `NEXUS_LANGUAGE=en` in `.env`, or change the language for the current run with:
-
-```text
-/language auto
-/language pt
-/language en
+```env
+NEXUS_PROVIDER=ollama
+OLLAMA_API_KEY=your_ollama_api_key
+OLLAMA_MODEL=beam
 ```
 
-The selected language is used as the interface preference. The agent also detects the language of each user message and normally replies in that same language; an explicit language request takes priority. The application currently ships with Portuguese and English translations.
+The available models depend on provider availability and account access.
+
+Some models may not support all NEXUS tools or image input.
+
+## Operation Modes
+
+### Chat
+
+Conversational mode without computer-operation tools.
+
+### Planner
+
+Analyzes requests and creates plans without executing computer operations.
+
+### Operator
+
+Uses the available tools to perform supported computer operations.
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `/providers` | List supported cloud providers. |
-| `/provider ollama` or `/provider groq` | Select a provider. |
-| `/agents` or `/models` | Fetch the provider's model catalog. |
-| `/agent <number\|id>` | Select a model. |
-| `/modes` | List NEXUS operation modes. |
-| `/mode operator` | Enable computer-use tools. |
-| `/mode planner` | Plan without executing tools. |
-| `/mode chat` | Chat without computer tools. |
-| `/language auto\|pt\|en` | Detect or change the interface and response language. |
-| `/vision on` / `/vision off` | Enable or disable screenshot sharing with the cloud model. |
-| `/workspace` | Show the current workspace. |
-| `/workspace <folder>` | Set an existing folder as the session workspace. |
-| `/workspace off` | Return `.txt` creation to the Desktop default. |
-| `/status` | Show current configuration. |
-| `/init` | Create a starter `NEXUS.md` without overwriting an existing file. |
-| `/help` | Show command help. |
-| `/clear` | Clear the terminal and redraw the welcome screen. |
-| `/exit` | Exit NEXUS. |
+| `/providers` | Lists supported providers. |
+| `/provider groq` | Selects Groq Cloud. |
+| `/provider ollama` | Selects Ollama Cloud. |
+| `/agents` | Retrieves available models. |
+| `/models` | Alternative model catalog command. |
+| `/agent <number or id>` | Selects a model. |
+| `/modes` | Lists operation modes. |
+| `/mode chat` | Activates Chat mode. |
+| `/mode planner` | Activates Planner mode. |
+| `/mode operator` | Activates Operator mode. |
+| `/language auto` | Automatically detects language. |
+| `/language pt` | Selects Portuguese. |
+| `/language en` | Selects English. |
+| `/vision on` | Enables screenshot sharing with compatible models. |
+| `/vision off` | Disables screenshot sharing. |
+| `/workspace` | Displays the current workspace. |
+| `/workspace <folder>` | Sets the working directory. |
+| `/workspace off` | Disables the selected workspace. |
+| `/status` | Displays current configuration. |
+| `/init` | Creates a starter NEXUS.md file. |
+| `/help` | Displays available commands. |
+| `/clear` | Clears the terminal. |
+| `/exit` | Exits NEXUS. |
 
-## Workspace behavior
+## Workspace
 
-Set a folder with `/workspace C:\Users\You\Desktop\MyProject`. The folder must already exist. During a task, the agent may also set the workspace after creating or identifying the project root. The workspace remains active for the current process only. If none is set, the dedicated `.txt` writer uses the Windows Desktop. It accepts a filename rather than an arbitrary path and creates files exclusively, refusing to overwrite existing files.
+NEXUS supports selecting a working directory for project-related tasks.
 
-## Vision and Windows metadata
+Example:
 
-Vision is off by default. With `/vision on`, a screenshot requested by the agent is saved locally and sent to the configured provider only if the selected model is configured as image-capable. Screenshots may contain private information; close sensitive pages and documents before enabling this feature.
-
-The `get_active_window` tool queries the Windows foreground window, title, process ID, and rectangle. `get_screen_info` returns measured display dimensions and foreground-window metadata. The model still interprets the screenshot pixels; Windows metadata is provided as separate measured context.
-
-Beam is a text model and should not be used for image analysis. Verify image-input and tool-calling support with the provider before selecting a model for Operator mode.
-
-## Security and privacy
-
-- Keep API keys in `.env`. The repository ignores `.env`, logs, screenshots, virtual environments, and Python cache files.
-- NEXUS runs with the permissions of the current Windows account. Do not run it as Administrator without a clear need.
-- PyAutoGUI fail-safe is enabled; moving the pointer to the top-left corner interrupts PyAutoGUI actions.
-- Potentially destructive PowerShell commands require local confirmation, but pattern checks are heuristic and are not a security boundary or sandbox.
-- Screenshots are sent to the cloud provider only when vision is enabled and the model is configured for image input.
-- Conversation history and workspace are held in process memory. Restarting NEXUS starts a new session.
-- Review commands and outputs before relying on them. A tool call alone is not proof that an action succeeded.
-
-## Tests
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```text
+/workspace C:\Users\You\Desktop\MyProject
 ```
 
-GitHub Actions also runs the unit suite on Windows with Python 3.11. Automated unit tests do not replace acceptance testing with real provider credentials, tool calls, and an interactive Windows desktop.
+The selected directory must already exist.
 
-## Project structure
+The workspace remains active for the current process only.
+
+If no workspace is selected, the dedicated text-file writer uses the Windows Desktop by default.
+
+The text-file writer creates new files without overwriting existing ones.
+
+## Vision and Desktop Information
+
+Vision is disabled by default.
+
+When enabled, screenshots may be sent to the selected cloud provider if the selected model supports image input.
+
+Screenshots can contain private information. Close sensitive applications and documents before enabling vision.
+
+NEXUS can also retrieve Windows desktop metadata, including screen dimensions and foreground-window information.
+
+## Security and Privacy
+
+- Keep API keys inside `.env`.
+- Never commit `.env` to GitHub.
+- Do not run NEXUS as Administrator without a clear reason.
+- Review PowerShell commands before relying on their results.
+- Potentially destructive operations use heuristic safety checks and local confirmation.
+- These checks are not a sandbox or a complete security boundary.
+- Screenshots are shared with the cloud provider only when vision is enabled and the selected model supports image input.
+- Conversation history and workspace state are held in process memory.
+- Restarting NEXUS starts a new session.
+
+NEXUS operates with the permissions of the current Windows account.
+
+## Known Limitations
+
+- AI model capabilities vary between providers.
+- Tool-calling compatibility is not guaranteed for every model.
+- Vision requires a compatible image-input model.
+- Safety checks are heuristic.
+- Session history is not persistent between restarts.
+- Provider rate limits can interrupt requests.
+- Computer operations should be reviewed and verified.
+
+## Project Structure
 
 ```text
 nexus/
+├── .env.example
+├── .gitattributes
+├── .gitignore
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── GITHUB_RELEASE_CHECKLIST.md
+├── README.md
+├── README.pt-BR.md
+├── ROADMAP.md
+├── SECURITY.md
+├── VERSION
 ├── agent.py
 ├── catalog.py
 ├── config.py
 ├── i18n.py
+├── iniciar.py
 ├── main.py
-├── tools.py
+├── requirements.txt
+├── run_nexus.bat
 ├── safety.py
 ├── text_utils.py
-├── assets/nexus_logo.png
-├── tests/test_core.py
-├── .github/workflows/tests.yml
-├── .env.example
-├── run_nexus.bat
-├── requirements.txt
-├── SECURITY.md
-├── CONTRIBUTING.md
-└── VERSION
+└── tools.py
 ```
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for planned improvements and future development.
 
 ## License
 
-No license has been selected yet. Until a license is added, the default copyright rules apply; public visibility alone does not grant permission to reuse or redistribute the code. Choose and add a license before describing the project as open source.
+No license has been selected yet.
+
+Until a license is added, the default copyright rules apply. Public repository visibility does not automatically grant permission to reuse, modify, or redistribute this project.
+
+---
+
+**NEXUS 1.0**
+
+Built with Python and cloud AI.
