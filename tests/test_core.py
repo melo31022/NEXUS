@@ -58,7 +58,7 @@ class NexusCoreTests(unittest.TestCase):
         self.assertEqual(detect_language("en-US"), "en")
 
     def test_translations_have_fallback_and_formatting(self):
-        self.assertEqual(tr("welcome", "pt"), "Bem-vindo ao NEXUS 1.0")
+        self.assertEqual(tr("welcome", "pt"), "Bem-vindo ao NEXUS 1.1")
         self.assertEqual(tr("unknown_command", "en", command="/oops"), "Unknown command: /oops. Type /help.")
         self.assertEqual(language_name("en"), "English")
 
