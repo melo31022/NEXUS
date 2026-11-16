@@ -26,3 +26,19 @@ Do not commit `.env`, paste API keys into issues, or include them in logs. If a 
 - `NEXUS_REQUEST_TIMEOUT`: request timeout in seconds.
 
 Token estimates are conservative heuristics, not exact provider tokenization. Leave headroom for provider-specific message and image accounting.
+
+
+## Interactive CMD setup and credential storage
+
+Use `/setup [provider]` inside NEXUS to configure a provider without editing files. The API key is collected through hidden terminal input and saved encrypted for the current Windows user with Windows DPAPI under `%LOCALAPPDATA%\\NEXUS\\settings.dat`. It cannot be decrypted by another Windows user account on the same computer.
+
+Other commands:
+
+- `/key status [provider]`: show whether a key is configured; never prints the secret.
+- `/key set [provider]`: securely enter and save a key without echoing it.
+- `/key remove [provider]`: remove the saved key after confirmation.
+- `/endpoint`: show the current provider endpoint.
+- `/endpoint https://...`: change the endpoint; HTTPS is required.
+- `/test`: send a short, low-token chat request to verify endpoint, authentication and selected model. This request may count against the provider's quota.
+
+Existing `.env` configurations remain supported. Secure settings saved through the CMD take precedence over `.env`. Never paste keys into ordinary commands, chat messages, logs, screenshots, or source files.
