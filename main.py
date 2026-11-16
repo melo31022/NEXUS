@@ -124,6 +124,13 @@ class NexusSession:
 
     def render_welcome(self) -> None:
         console.clear()
+        if config.SECURE_STORE_ERROR:
+            console.print(Panel(
+                "[yellow]As configurações protegidas não puderam ser lidas. "
+                "As chaves salvas podem não estar disponíveis nesta sessão. "
+                "Use /setup para reconfigurar após verificar sua conta do Windows.[/yellow]",
+                title="Aviso de armazenamento seguro", border_style="yellow"
+            ))
         render_logo()
         intro = Panel(
             Align.center(f"[bold white]{tr('tagline', self.language).upper()}[/bold white]\n[dim]{tr('subtitle', self.language)}[/dim]"),
