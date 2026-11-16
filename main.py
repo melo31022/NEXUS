@@ -128,6 +128,7 @@ class NexusSession:
         guide = (
             f"[bold]{tr('provider_step', self.language)}[/bold]\n"
             f"[cyan]/providers[/cyan]       {tr('provider_list', self.language)}\n"
+            f"[cyan]/setup [provider][/cyan] {tr('setup_provider', self.language)}\n"
             f"[cyan]/provider <name>[/cyan] Select a cloud provider\n\n"
             f"[bold]{tr('model_step', self.language)}[/bold]\n"
             f"[cyan]/agents[/cyan]           {tr('fetch_models', self.language)}\n"
