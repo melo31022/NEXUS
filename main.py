@@ -351,7 +351,7 @@ class NexusSession:
             data = response.json()
             answer = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             console.print(f"[green]Conexão e autenticação aprovadas.[/green] Resposta: {str(answer)[:120] or '(resposta vazia)'}")
-        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
             console.print(f"[red]Falha no teste: {type(exc).__name__}: {exc}[/red]")
 
     def initialize_project_instructions(self) -> None:
