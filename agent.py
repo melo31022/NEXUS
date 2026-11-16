@@ -206,6 +206,8 @@ class NexusAgent:
         )
         if compacted:
             self._write_log(f"[TokenGuard] Histórico compactado; estimativa pré-envio: {estimated_tokens} tokens.")
+        if estimated_tokens > max(1000, MAX_CONTEXT_TOKENS - MAX_OUTPUT_TOKENS):
+            raise RuntimeError("Token Guard não conseguiu reduzir o contexto abaixo do orçamento. Envie uma solicitação menor ou limpe o histórico com /clear.")
         console.print(f"[dim]Token Guard: estimativa ~{estimated_tokens} tokens[/dim]")
         payload: dict[str, Any] = {
             "model": self.model, "messages": self.messages,
@@ -341,6 +343,15 @@ class NexusAgent:
                 with console.status(f"[bold cyan]NEXUS está analisando • etapa {step}/{MAX_STEPS_PER_TASK}[/bold cyan]", spinner="dots"):
                     response = self.call_ai()
                 elapsed = time.monotonic() - started
+                usage = response.get("usage")
+                if isinstance(usage, dict):
+                    input_tokens = usage.get("prompt_tokens", usage.get("input_tokens"))
+                    output_tokens = usage.get("completion_tokens", usage.get("output_tokens"))
+                    total_tokens = usage.get("total_tokens")
+                    if input_tokens is not None or output_tokens is not None:
+                        usage_line = f"Uso informado pelo provedor: entrada={input_tokens or '?'}, saída={output_tokens or '?'}, total={total_tokens or '?'} tokens."
+                        console.print(f"[dim]{usage_line}[/dim]")
+                        self._write_log(f"[TokenUsage] {usage_line}")
                 message = response["choices"][0].get("message") or {}
                 if not isinstance(message, dict):
                     raise RuntimeError("Formato de mensagem inválido recebido da API.")

@@ -23,6 +23,20 @@ class TokenGuardTests(unittest.TestCase):
         self.assertEqual(compacted[0]["role"], "system")
         self.assertIn("latest request", str(compacted[-1]["content"]))
 
+    def test_oversized_recent_window_compacts_tool_output_and_keeps_latest_request(self):
+        messages = [
+            {"role": "system", "content": "rules"},
+            {"role": "user", "content": "latest request must remain visible"},
+            {"role": "assistant", "tool_calls": [{"id": "call-1", "type": "function"}]},
+            {"role": "tool", "tool_call_id": "call-1", "name": "list_directory", "content": "b" * 5000},
+            {"role": "assistant", "content": "a" * 2500},
+        ]
+        compacted, estimate, changed = compact_messages(messages, budget=450, preserve_recent=12)
+        self.assertTrue(changed)
+        self.assertLess(estimate, estimate_messages_tokens(messages))
+        self.assertIn("latest request must remain visible", str(compacted))
+        self.assertTrue(any("[resultado compactado" in str(item.get("content", "")) for item in compacted))
+
     def test_small_context_is_unchanged(self):
         messages = [{"role": "system", "content": "rules"}, {"role": "user", "content": "hello"}]
         result, _, changed = compact_messages(messages, budget=1000)
