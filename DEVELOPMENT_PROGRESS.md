@@ -22,6 +22,7 @@ Last updated: 2026-11-16
 - [x] Strengthen Token Guard for oversized recent turns, compact tool/assistant outputs, enforce the context budget and display provider usage when returned.
 - [x] Configure CI matrix for Ubuntu, Windows x64 and Windows ARM64 runners.
 - [x] Align DeepSeek endpoint/model defaults with its current API and preserve reasoning continuation fields for DeepSeek/OpenRouter.
+- [x] Add Cerebras-specific completion-token parameter mapping and GLM 4.7 preserved-thinking defaults.
 - [ ] Confirm GitHub Actions results for the current CI matrix.
 - [x] Add CI status badge and links to testing/development-status documentation in the GitHub README.
 - [ ] Run manual acceptance tests on Windows 10/11 ARM64.

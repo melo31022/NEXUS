@@ -16,7 +16,7 @@ from config import BASE_DIR, MAX_STEPS_PER_TASK, REQUEST_TIMEOUT, ProviderConfig
 from tools import DesktopTools
 from safety import command_needs_confirmation
 from token_guard import compact_messages
-from providers import request_with_retry, sanitized_api_error
+from providers import adapt_chat_payload, request_with_retry, sanitized_api_error
 from task_recovery import TaskJournal, redact_sensitive_text
 
 console = Console()
@@ -219,6 +219,7 @@ class NexusAgent:
             # documents `tool_choice` as unsupported. Groq accepts `auto`.
             if self.provider.name != "ollama":
                 payload["tool_choice"] = "auto"
+        payload = adapt_chat_payload(self.provider.name, self.model, payload)
         url = self.provider.normalized_base_url() + "/chat/completions"
         try:
             response = request_with_retry(lambda: requests.post(url, headers=headers, json=payload, timeout=(15, REQUEST_TIMEOUT)), retries=3)
@@ -362,7 +363,7 @@ class NexusAgent:
                     tool_calls = tool_calls[:MAX_TOOL_CALLS_PER_STEP]
                     message["tool_calls"] = tool_calls
                 # Preserve the assistant tool-call message exactly as returned by the provider.
-                assistant_message = {key: value for key, value in message.items() if key in {"role", "content", "tool_calls", "refusal", "reasoning_content", "reasoning_details"}}
+                assistant_message = {key: value for key, value in message.items() if key in {"role", "content", "tool_calls", "refusal", "reasoning_content", "reasoning_details", "reasoning"}}
                 assistant_message["role"] = "assistant"
                 self.messages.append(assistant_message)
                 console.print(f"[dim]NEXUS • resposta recebida em {elapsed:.1f}s • etapa {step}[/dim]")

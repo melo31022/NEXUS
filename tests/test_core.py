@@ -9,6 +9,7 @@ from catalog import extract_model_ids  # noqa: E402
 from config import PROVIDERS, get_provider  # noqa: E402
 from safety import command_needs_confirmation  # noqa: E402
 from text_utils import normalize_text_content  # noqa: E402
+from providers import adapt_chat_payload  # noqa: E402
 from i18n import detect_language, language_name, tr  # noqa: E402
 
 
@@ -32,6 +33,16 @@ class NexusCoreTests(unittest.TestCase):
     def test_deepseek_flash_uses_current_endpoint_and_supports_vision(self):
         self.assertEqual(PROVIDERS["deepseek"].base_url, "https://api.deepseek.com")
         self.assertTrue(PROVIDERS["deepseek"].supports_vision("deepseek-flash"))
+
+    def test_cerebras_payload_adapter_uses_provider_completion_field(self):
+        original = {"model": "zai-glm-4.7", "max_tokens": 2048, "temperature": 0.2}
+        adapted = adapt_chat_payload("cerebras", "zai-glm-4.7", original)
+        self.assertNotIn("max_tokens", adapted)
+        self.assertEqual(adapted["max_completion_tokens"], 2048)
+        self.assertEqual(adapted["temperature"], 1.0)
+        self.assertEqual(adapted["top_p"], 0.95)
+        self.assertIs(adapted["clear_thinking"], False)
+        self.assertIn("max_tokens", original)
 
     def test_read_only_command_does_not_require_confirmation(self):
         self.assertFalse(command_needs_confirmation("Get-ChildItem $HOME"))

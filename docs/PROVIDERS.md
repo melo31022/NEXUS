@@ -44,6 +44,10 @@ Other commands:
 Existing `.env` configurations remain supported. Secure settings saved through the CMD take precedence over `.env`. Never paste keys into ordinary commands, chat messages, logs, screenshots, or source files.
 
 
+## Cerebras parameter and model compatibility
+
+The default Cerebras model is `gpt-oss-120b`. Cerebras documents `max_completion_tokens` for completion limits; NEXUS translates its internal output budget to that field for Cerebras requests. When `zai-glm-4.7` is selected, NEXUS applies the documented sampling defaults and `clear_thinking: false` so reasoning can be preserved through agentic tool-call turns. The model may have account/tier availability limits; validate it with `/test` and `/modeltest`.
+
 ## DeepSeek current API behavior
 
 The current DeepSeek Chat Completions endpoint is `https://api.deepseek.com/chat/completions` (base URL without `/v1`). The current Flash model ID is `deepseek-flash`; older names such as `deepseek-chat` should not be assumed to represent the current model. Flash accepts image input and tool calls. In thinking mode, preserve provider-returned `reasoning_content` in assistant messages when continuing a tool-call conversation. NEXUS retains this field, along with OpenRouter `reasoning_details`, instead of dropping provider-specific continuation data.

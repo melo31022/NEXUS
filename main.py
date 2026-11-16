@@ -362,6 +362,8 @@ class NexusSession:
             "max_tokens": 8,
             "temperature": 0,
         }
+        from providers import adapt_chat_payload
+        payload = adapt_chat_payload(provider.name, self.model, payload)
         console.print(f"Testando [cyan]{provider.label}[/cyan] • [dim]{self.model}[/dim]...")
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=(8, 25))

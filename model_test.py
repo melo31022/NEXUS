@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from providers import request_with_retry, sanitized_api_error
+from providers import adapt_chat_payload, request_with_retry, sanitized_api_error
 
 
 def _request(provider: Any, model: str, messages: list[dict[str, Any]], **options: Any) -> tuple[dict[str, Any] | None, float, str]:
@@ -16,6 +16,7 @@ def _request(provider: Any, model: str, messages: list[dict[str, Any]], **option
         headers["Authorization"] = f"Bearer {provider.api_key}"
     payload: dict[str, Any] = {"model": model, "messages": messages, "temperature": 0, "max_tokens": 256}
     payload.update(options)
+    payload = adapt_chat_payload(provider.name, model, payload)
     started = time.monotonic()
     try:
         response = request_with_retry(

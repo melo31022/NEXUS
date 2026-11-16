@@ -31,6 +31,19 @@ def retry_delay(response: requests.Response | None, attempt: int, *, maximum: fl
     return min(maximum, 1.5 * (2 ** max(0, attempt - 1)) + random.uniform(0, 0.4))
 
 
+def adapt_chat_payload(provider_name: str, model: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Normalize provider-specific Chat Completions parameters without mutating the caller."""
+    adapted = dict(payload)
+    if provider_name == "cerebras":
+        if "max_tokens" in adapted:
+            adapted["max_completion_tokens"] = adapted.pop("max_tokens")
+        if model == "zai-glm-4.7":
+            adapted["temperature"] = 1.0
+            adapted["top_p"] = 0.95
+            adapted["clear_thinking"] = False
+    return adapted
+
+
 def request_with_retry(
     request: Callable[[], requests.Response],
     *,
