@@ -6,7 +6,7 @@ import re
 import time
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 import requests
 
