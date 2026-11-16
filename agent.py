@@ -17,7 +17,7 @@ from tools import DesktopTools
 from safety import command_needs_confirmation
 from token_guard import compact_messages
 from providers import request_with_retry, sanitized_api_error
-from task_recovery import TaskJournal
+from task_recovery import TaskJournal, redact_sensitive_text
 
 console = Console()
 
@@ -319,7 +319,7 @@ class NexusAgent:
                     else:
                         result_text = str(result)
                     console.print(Text(f"    ↳ {result_text[:700]}"))
-                    self._write_log(f"[Result] {result_text}")
+                    self._write_log(f"[Result] {redact_sensitive_text(result_text)}")
                     action_ok = not result_text.lower().startswith(("erro:", "falha", "powershell retornou código"))
                     self.task_journal.record_action(name, arguments if isinstance(arguments, dict) else {}, result_text, success=action_ok)
                     self.messages.append({
