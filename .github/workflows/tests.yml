@@ -2,7 +2,7 @@ name: NEXUS 1.1 validation
 
 on:
   push:
-    branches: [nexus-1.1-work]
+    branches: [dev-1.1, nexus-1.1-work]
   pull_request:
     branches: [main, dev-1.1]
 
