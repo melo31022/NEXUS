@@ -67,10 +67,11 @@ TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "type_text", "description": "Digita texto no campo que estiver em foco.", "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}}},
     {"type": "function", "function": {"name": "press_key", "description": "Pressiona uma tecla, como enter, tab ou esc.", "parameters": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}}},
     {"type": "function", "function": {"name": "key_combination", "description": "Pressiona uma combinação de teclas, como ctrl+c.", "parameters": {"type": "object", "properties": {"keys": {"type": "array", "items": {"type": "string"}}}, "required": ["keys"]}}},
+    {"type": "function", "function": {"name": "list_directory", "description": "Lista diretamente os arquivos e subpastas de uma pasta, sem PowerShell e sem alterar nada. Se path for omitido, lista o workspace atual ou a Área de Trabalho. Use para pedidos como listar arquivos, ver conteúdo de uma pasta ou conferir arquivos criados.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "limit": {"type": "integer"}}}},
     {"type": "function", "function": {"name": "write_text_file", "description": "Cria um novo arquivo .txt no workspace atual (ou na Área de Trabalho se nenhum workspace estiver definido), sem sobrescrever arquivos existentes.", "parameters": {"type": "object", "properties": {"filename": {"type": "string"}, "content": {"type": "string"}}, "required": ["filename", "content"]}}},
     {"type": "function", "function": {"name": "set_workspace", "description": "Define como workspace uma pasta existente escolhida pelo usuário ou recém-criada para o projeto. Use antes de criar arquivos do projeto nessa pasta.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
     {"type": "function", "function": {"name": "screenshot", "description": "Salva uma captura de tela. Com visão ativada e modelo compatível, a imagem também será enviada ao modelo para análise.", "parameters": {"type": "object", "properties": {"filename": {"type": "string"}}}}},
-    {"type": "function", "function": {"name": "list_windows", "description": "Lista títulos das janelas abertas no Windows.", "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {"name": "list_windows", "description": "Lista títulos das janelas abertas no Windows. Use apenas quando precisar localizar uma janela existente; após open_application, a janela normalmente já é ativada.", "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {"name": "get_active_window", "description": "Obtém pela API do Windows a janela em primeiro plano, seu título, PID e posição real na tela.", "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {"name": "get_screen_info", "description": "Obtém a resolução real da tela e os metadados da janela ativa.", "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {"name": "open_application", "description": "Abre um aplicativo ou caminho executável do Windows.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
@@ -119,6 +120,11 @@ class NexusAgent:
                 "Gere o conteúdo solicitado quando o usuário disser que você pode inventá-lo. "
                 "Mantenha contexto entre mensagens da sessão. "
                 "Preserve quebras de linha reais no conteúdo; não escreva sequências literais \\n. "
+                "Para listar arquivos e pastas, use list_directory; nunca use PowerShell para uma listagem simples. "
+                "Para tarefas curtas de interface (por exemplo, abrir um aplicativo e digitar texto), emita as chamadas ordenadas open_application e type_text no mesmo lote quando possível. "
+                "open_application já tenta ativar a janela; não chame list_windows ou activate_window depois, a menos que a abertura falhe ou a janela não esteja pronta. "
+                "Use mouse_move e left_click/right_click/double_click para interagir com controles visuais; se as coordenadas não forem conhecidas, faça screenshot primeiro e use a resolução/metadados para localizar o controle. "
+                "Não substitua interação visual solicitada por explicações textuais. "
                 "Use PowerShell apenas para tarefas necessárias ao objetivo. "
                 "Para tarefas que alterem arquivos, prefira limitar o escopo ao caminho informado pelo usuário. "
                 "Não faça alterações irreversíveis sem explicar e obter confirmação local."
@@ -208,6 +214,11 @@ class NexusAgent:
             self.workspace_dir = str(target)
             self.task_journal.set_workspace(self.workspace_dir)
             return f"Workspace definido para esta sessão: {target}"
+        if name == "list_directory":
+            return DesktopTools.list_directory(
+                path=arguments.get("path") or (self.workspace_dir or str(DesktopTools._desktop_directory())),
+                limit=arguments.get("limit", 100),
+            )
         if name == "write_text_file":
             return DesktopTools.write_text_file(
                 filename=arguments.get("filename", ""),
