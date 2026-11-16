@@ -35,13 +35,15 @@ Provider and model capabilities vary. A model appearing in a catalog does not gu
 - Internet connection.
 - API key for a supported cloud provider.
 
-## Quick Start
+## Quick Start (CMD)
+
+The commands below are intended for **Command Prompt (CMD)**, not PowerShell.
 
 1. Download the `dev-1.1` branch archive from GitHub and extract it.
-2. Open a terminal in the extracted project folder.
+2. Open CMD in the extracted project folder.
 3. Run:
 
-   ```powershell
+   ```cmd
    py -3.11 iniciar.py
    ```
 
@@ -52,14 +54,16 @@ Provider and model capabilities vary. A model appearing in a catalog does not gu
 
 The first installation requires an internet connection. Later launches reuse the virtual environment.
 
-## Manual Installation
+## Manual Installation (CMD)
 
-```powershell
+Run these commands from the project folder:
+
+```cmd
 py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-.\.venv\Scripts\python.exe main.py
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env
+.venv\Scripts\python.exe main.py
 ```
 
 ## Provider Configuration
