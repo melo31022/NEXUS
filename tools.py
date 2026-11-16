@@ -195,7 +195,7 @@ class DesktopTools:
                 lines.append(f"- [INDISPONÍVEL] {item.name}")
         if len(entries) > limit:
             lines.append(f"... mais {len(entries) - limit} itens omitidos (limite {limit}).")
-        return "\\n".join(lines)
+        return "\n".join(lines)
 
     @staticmethod
     def screen_info() -> dict[str, Any]:

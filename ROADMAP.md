@@ -18,6 +18,13 @@ This roadmap distinguishes implemented work from items that still require develo
 
 ## Version 1.1.0 — Reliability, Provider Expansion, and Computer Use
 
+### ModelTest
+
+- [x] Add `/modeltest` for live chat, JSON, short-context and tool-call emission checks.
+- [x] Inspect tool-call requests without executing them.
+- [x] Require separate user consent before sending a desktop screenshot for vision testing.
+- [ ] Validate every provider/model combination with live accounts and record results.
+
 ### 1. Token Guard
 
 - [x] Estimate prompt/context size before requests using a conservative heuristic.

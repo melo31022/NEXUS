@@ -78,6 +78,7 @@ Nunca publique o arquivo `.env` nem compartilhe suas chaves de API.
 | `/key status\|set\|remove [provider]` | Consulta, adiciona ou remove uma chave sem exibi-la. |
 | `/endpoint [URL]` | Consulta ou altera o endpoint HTTPS. |
 | `/test` | Testa autenticação e uma resposta curta do modelo selecionado. |
+| `/modeltest` | Avalia chat, JSON, contexto, tool calling e visão opcional. |
 | `/provider <nome>` | Seleciona um provedor. |
 | `/agents` ou `/models` | Consulta o catálogo de modelos. |
 | `/agent <número ou id>` | Seleciona um modelo. |
@@ -90,6 +91,10 @@ Nunca publique o arquivo `.env` nem compartilhe suas chaves de API.
 | `/status` | Mostra a configuração atual. |
 | `/help` | Exibe a ajuda. |
 | `/exit` | Encerra o NEXUS. |
+
+## ModelTest
+
+Use `/modeltest` para executar chamadas reais de avaliação ao modelo ativo. O comando pede confirmação porque pode consumir a cota da API. Ele verifica chat, JSON, contexto curto e emissão de tool calls sem executar ferramentas. Se o modelo estiver cadastrado para visão, o NEXUS pede um segundo consentimento antes de capturar e enviar a tela. A autoidentificação verbal do modelo não é usada como prova de identidade. Consulte [docs/MODELTEST.md](docs/MODELTEST.md).
 
 ## Token Guard
 

@@ -8,7 +8,7 @@ import requests
 
 import config
 from providers import request_with_retry, sanitized_api_error
-from task_recovery import TaskJournal, resumable_actions
+from task_recovery import TaskJournal, resumable_actions, redact_sensitive_text
 from token_guard import compact_messages, estimate_messages_tokens
 
 
@@ -41,6 +41,12 @@ class TaskRecoveryTests(unittest.TestCase):
             self.assertEqual(records[0]["status"], "interrupted")
             self.assertIn("[redacted]", records[0]["actions"][0]["result"])
             self.assertEqual(len(resumable_actions(records[0])), 0)
+
+    def test_sensitive_text_redaction_handles_bearer_and_key_patterns(self):
+        value = redact_sensitive_text("Authorization: Bearer abc123 api_key=secret456")
+        self.assertNotIn("abc123", value)
+        self.assertNotIn("secret456", value)
+        self.assertIn("[redacted]", value)
 
     def test_only_read_only_operations_are_retry_safe(self):
         with tempfile.TemporaryDirectory() as temp:

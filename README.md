@@ -161,3 +161,8 @@ No license has been selected yet. Until a license is added, the default copyrigh
 ---
 
 **NEXUS 1.1.0 — Development branch**
+
+
+## ModelTest
+
+Run `/modeltest` to make live, non-destructive capability checks against the selected provider/model. It asks for confirmation because requests may consume API quota. Tool calls are inspected but never executed. Sending a desktop screenshot requires a separate explicit confirmation. Model self-identification is not treated as proof of provider/model identity. See [docs/MODELTEST.md](docs/MODELTEST.md).

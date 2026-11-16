@@ -145,6 +145,37 @@ class NexusAgent:
             )
             # Keep the current workspace explicit even when continuing an older conversation.
             self.messages.append({"role": "system", "content": workspace_context})
+        context_marker = "[NEXUS_OPERATIONAL_CONTEXT]"
+        self.messages = [
+            item for item in self.messages
+            if not (item.get("role") == "system" and str(item.get("content", "")).startswith(context_marker))
+        ]
+        active_workspace = self.workspace_dir or str(DesktopTools._desktop_directory())
+        try:
+            visible_entries = sorted(
+                (f"{'[DIR]' if item.is_dir() else '[FILE]'} {item.name}" for item in Path(active_workspace).iterdir()),
+                key=str.casefold,
+            )[:40]
+            directory_snapshot = "\n".join(visible_entries) if visible_entries else "(pasta vazia)"
+        except OSError as exc:
+            directory_snapshot = f"(listagem indisponível: {type(exc).__name__})"
+        tool_names = ", ".join((
+            "mouse_move", "left_click", "right_click", "double_click", "scroll", "activate_window",
+            "type_text", "press_key", "key_combination", "list_directory", "write_text_file",
+            "set_workspace", "screenshot", "list_windows", "get_active_window", "get_screen_info",
+            "open_application", "powershell_execute"
+        )) if self.agent_profile["tools"] else "nenhuma"
+        operational_context = (
+            f"{context_marker}\n"
+            f"Provedor ativo: {provider.name} ({provider.label}). Modelo configurado: {self.model}. "
+            f"Modo atual: {mode_name}. Visão habilitada: {self.vision_enabled}. "
+            f"Diretório de execução: {Path.cwd()}. Workspace: {active_workspace}. "
+            f"Ferramentas disponíveis neste modo: {tool_names}.\n"
+            f"Entradas visíveis no workspace (apenas nomes; não foram lidos):\n{directory_snapshot}\n"
+            "Não afirme ter inspecionado o conteúdo de arquivos apenas porque seus nomes aparecem nesta lista. "
+            "Use a ferramenta apropriada para ler ou verificar arquivos. Este snapshot é parcial e limitado a 40 entradas."
+        )
+        self.messages.append({"role": "system", "content": operational_context})
         self.messages.append({"role": "user", "content": f"Objetivo do usuário: {goal}"})
 
     def _write_log(self, text: str) -> None:

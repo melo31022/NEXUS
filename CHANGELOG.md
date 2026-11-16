@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — NEXUS 1.1 development
+
+- Added `/modeltest` for live, non-destructive checks of chat, JSON mode, short-context retention, and tool-call emission.
+- Tool-call tests inspect model output but never execute the probe tool.
+- Vision testing requires separate consent before a desktop screenshot is sent to the provider.
+- Added explicit operational context for provider, model, mode, workspace and a bounded filename snapshot.
+- Fixed secret-redaction regular expressions in task recovery and directory-listing line separators.
+- Added regression tests for ModelTest behavior and secret redaction.
+
+# Changelog
+
 ## 1.1.0 — 2026-11-16
 
 ### Added

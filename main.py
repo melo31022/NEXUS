@@ -24,6 +24,7 @@ from agent import MODES, NexusAgent
 from catalog import extract_model_ids
 from i18n import detect_language, language_name, tr
 from task_recovery import TaskJournal
+from model_test import run_model_test
 
 console = Console()
 BASE_DIR = Path(__file__).resolve().parent
@@ -186,6 +187,7 @@ class NexusSession:
             ("/key set|remove [provider]", "Adiciona ou remove uma chave de API com entrada oculta."),
             ("/endpoint [https://...]", "Mostra ou altera o endpoint do provedor ativo."),
             ("/test", "Testa autenticação, endpoint e modelo com uma requisição curta."),
+            ("/modeltest", "Avalia chat, JSON, contexto, tool calling e visão opcional sem executar ferramentas."),
             ("/agents", tr("cmd_agents", self.language)),
             ("/agent <number|id>", tr("cmd_agent", self.language)),
             ("/models", "Alias: /agents"),
@@ -372,6 +374,44 @@ class NexusSession:
         except (requests.RequestException, ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
             console.print(f"[red]Falha no teste: {type(exc).__name__}: {exc}[/red]")
 
+    def run_modeltest(self) -> None:
+        provider = self.provider
+        if provider.requires_api_key and not provider.api_key:
+            console.print("[yellow]Chave ausente. Use /key set ou /setup antes do ModelTest.[/yellow]")
+            return
+        console.print(Panel(
+            "O ModelTest fará até cinco chamadas de avaliação e pode consumir a cota da API. "
+            "Chamadas de ferramentas serão apenas inspecionadas, nunca executadas.",
+            title="ModelTest • confirmação", border_style="blue"
+        ))
+        if console.input("Continuar? [s/N]: ").strip().lower() not in {"s", "sim", "y", "yes"}:
+            console.print("[dim]ModelTest cancelado.[/dim]")
+            return
+        image_data_url = None
+        if provider.supports_vision(self.model):
+            if console.input("Enviar uma captura da tela atual ao provedor para testar visão? Feche antes qualquer janela privada. [s/N]: ").strip().lower() in {"s", "sim", "y", "yes"}:
+                try:
+                    from tools import DesktopTools
+                    screenshot = DesktopTools.screenshot(filename="modeltest_vision.jpg", include_image=True)
+                    image_data_url = screenshot.get("image_data_url")
+                except Exception as exc:
+                    console.print(f"[yellow]Falha ao capturar a tela: {type(exc).__name__}[/yellow]")
+        results = run_model_test(provider, self.model, image_data_url=image_data_url)
+        table = Table(title=f"ModelTest • {provider.label} • {self.model}", header_style="bold cyan")
+        table.add_column("Teste")
+        table.add_column("Resultado")
+        table.add_column("Tempo", justify="right")
+        table.add_column("Detalhe")
+        for item in results:
+            status = item["status"]
+            style = {"PASS": "green", "PARTIAL": "yellow", "FAIL": "red", "SKIP": "dim"}.get(status, "white")
+            table.add_row(item["name"], f"[{style}]{status}[/{style}]", f"{item['latency']:.2f}s", item["detail"])
+        console.print(table)
+        passed = sum(item["status"] == "PASS" for item in results)
+        partial = sum(item["status"] == "PARTIAL" for item in results)
+        console.print(f"Resumo: {passed} aprovados • {partial} parciais • {len(results) - passed - partial} falhos/não testados.")
+        console.print("[dim]A identidade do provedor/modelo vem da configuração local, não da autoidentificação verbal do modelo.[/dim]")
+
     def initialize_project_instructions(self) -> None:
         target = BASE_DIR / "NEXUS.md"
         if target.exists():
@@ -449,6 +489,8 @@ class NexusSession:
             self.manage_endpoint(argument)
         elif command == "/test":
             self.test_connection()
+        elif command == "/modeltest":
+            self.run_modeltest()
         elif command == "/provider":
             if argument.lower() not in config.PROVIDERS:
                 console.print("[yellow]Use /providers para ver os provedores em nuvem disponíveis.[/yellow]")
