@@ -66,6 +66,13 @@ def render_logo(path: Path = LOGO_PATH, width: int = 82) -> None:
         console.print(f"[dim]Logo alternativa: {type(exc).__name__}[/dim]")
 
 
+def read_hidden_secret(prompt: str) -> str:
+    """Read a secret only from an interactive terminal, without echoing it."""
+    if not sys.stdin.isatty():
+        raise RuntimeError("A entrada segura exige um CMD/Terminal interativo. Abra o NEXUS diretamente no terminal.")
+    return getpass.getpass(prompt)
+
+
 class NexusSession:
     def __init__(self) -> None:
         self.language = detect_language()
@@ -240,11 +247,14 @@ class NexusSession:
             title="Configuração segura do provedor", border_style="blue"
         ))
         try:
-            entered_key = getpass.getpass("Chave de API (Enter mantém a atual): ").strip()
+            entered_key = read_hidden_secret("Chave de API (Enter mantém a atual): ").strip()
             endpoint = console.input(f"Endpoint HTTPS [{current.normalized_base_url()}]: ").strip()
             model = console.input(f"ID do modelo [{current.default_model}]: ").strip()
         except (KeyboardInterrupt, EOFError):
             console.print("[yellow]Configuração cancelada.[/yellow]")
+            return
+        except RuntimeError as exc:
+            console.print(f"[yellow]{exc}[/yellow]")
             return
         endpoint = endpoint or current.normalized_base_url()
         model = model or current.default_model
@@ -256,12 +266,10 @@ class NexusSession:
             console.print("[yellow]Nenhuma chave informada. Use /key set para adicionar uma.[/yellow]")
             return
         try:
-            updated = config.save_provider_settings(
-                name,
-                api_key=entered_key if entered_key else config._UNSET,
-                model=model,
-                base_url=endpoint,
-            )
+            settings = {"model": model, "base_url": endpoint}
+            if entered_key:
+                settings["api_key"] = entered_key
+            updated = config.save_provider_settings(name, **settings)
             config.save_default_provider(name)
         except Exception as exc:
             console.print(f"[red]Não foi possível salvar a configuração: {type(exc).__name__}: {exc}[/red]")
@@ -286,9 +294,12 @@ class NexusSession:
             console.print(f"Chave de {current.label}: {'configurada' if current.api_key else 'ausente'}. O valor nunca é exibido.")
         elif action in {"set", "add"}:
             try:
-                value = getpass.getpass(f"Nova chave para {current.label} (entrada oculta): ").strip()
+                value = read_hidden_secret(f"Nova chave para {current.label} (entrada oculta): ").strip()
             except (KeyboardInterrupt, EOFError):
                 console.print("[yellow]Operação cancelada.[/yellow]")
+                return
+            except RuntimeError as exc:
+                console.print(f"[yellow]{exc}[/yellow]")
                 return
             if not value:
                 console.print("[yellow]Nenhuma chave foi informada; nada foi alterado.[/yellow]")
