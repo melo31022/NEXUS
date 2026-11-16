@@ -96,6 +96,17 @@ This roadmap distinguishes implemented work from items that still require develo
 - [ ] Complete end-to-end multi-step task acceptance testing.
 - [ ] Review all remaining limitations before a stable release.
 
+
+### 9. CMD Configuration and Credential Management
+
+- [x] Add an interactive provider setup wizard for API key, HTTPS endpoint, and model.
+- [x] Add hidden-input commands to add/remove API keys without displaying them.
+- [x] Encrypt saved provider settings for the current Windows user with DPAPI.
+- [x] Add endpoint inspection/update and a short connection/authentication test.
+- [ ] Validate DPAPI storage and recovery behavior on Windows 10/11 ARM64.
+- [ ] Test setup, key rotation/removal, and provider switching with each live provider.
+- [ ] Add an explicit migration flow for users who want to move existing .env keys into encrypted storage.
+
 ## Known 1.1.0 limitations
 
 - Token accounting is heuristic and may differ from provider-reported usage.
