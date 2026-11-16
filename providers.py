@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+import re
 import time
 from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
@@ -57,4 +58,6 @@ def request_with_retry(
 
 def sanitized_api_error(status: int, body: str) -> str:
     detail = " ".join(str(body).split())[:500]
+    detail = re.sub(r"(?i)(bearer\s+)[A-Za-z0-9._~+/-]+=*", r"\1[redacted]", detail)
+    detail = re.sub(r"(?i)((?:api[_ -]?key|token|password|secret)\s*[:=]\s*)[^\s,;]+", r"\1[redacted]", detail)
     return f"API retornou HTTP {status}. Detalhe sanitizado: {detail or 'sem detalhes'}"
