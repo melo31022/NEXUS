@@ -19,6 +19,37 @@
 - **Windows metadata:** screen dimensions and foreground-window information are measured separately from model visual interpretation.
 - **Safety checks:** potentially destructive PowerShell commands require local confirmation. These checks are heuristic, not a sandbox.
 
+  ## Project status
+
+**Current version: 1.0**
+
+NEXUS 1.0 establishes the core architecture for a cloud-powered Windows AI agent.
+
+Implemented capabilities include:
+- Cloud model providers: Groq Cloud and Ollama Cloud.
+- Chat, Planner and Operator modes.
+- PowerShell command execution.
+- File and workspace operations.
+- Screenshot and Windows window metadata support.
+- Tool execution with result reporting.
+- Basic safety checks for potentially destructive operations.
+
+Some capabilities depend on the selected model and provider. Tool-calling and image-input support are not guaranteed for every model.
+
+### Development roadmap
+
+The next planned release is **NEXUS 1.1**.
+
+Its main goals are:
+- Token Guard and context optimization.
+- Task checkpoints and recovery.
+- Improved computer interaction.
+- More reliable mouse and keyboard automation.
+- Better visual verification.
+- Improved error handling and execution safety.
+
+These roadmap items are planned improvements, not promises that they are already available in version 1.0.
+
 ## Requirements
 
 - Windows 10 or Windows 11 with an interactive user session.
