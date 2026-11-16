@@ -12,7 +12,9 @@ NEXUS does not run language models locally. All AI inference is performed by the
 
 ## Features
 
-- **Cloud AI providers:** Supports Groq Cloud and Ollama Cloud.
+**Version 1.1.0**
+
+- **Cloud AI providers:** Supports Ollama Cloud, Groq Cloud, OpenRouter, Cerebras, Together AI, and DeepSeek through hosted API endpoints.
 - **Dynamic model catalog:** Retrieves available models from the selected provider.
 - **Three operation modes:** Chat, Planner, and Operator.
 - **PowerShell integration:** Executes supported PowerShell commands.
@@ -22,6 +24,9 @@ NEXUS does not run language models locally. All AI inference is performed by the
 - **Windows metadata:** Retrieves information about the screen and active window.
 - **Safety checks:** Uses heuristic checks and local confirmation for potentially destructive operations.
 - **Multilingual interface:** Supports Portuguese (Brazil) and English.
+- **Token Guard:** Estimates context size, compacts older conversation turns, and limits output tokens/tool calls.
+- **Task checkpoints:** Saves task progress and action outcomes; `/tasks` lists recent records. Unsafe actions are never replayed automatically.
+- **Provider retries:** Uses bounded retries for transient HTTP errors and honors `Retry-After`.
 
 Some capabilities depend on the selected provider and model. Model availability does not guarantee tool-calling or image-input compatibility.
 
@@ -77,7 +82,7 @@ Copy-Item .env.example .env
 
 ## Provider Configuration
 
-Configure your provider in the `.env` file.
+Configure your provider in the `.env` file. Supported provider names: `ollama`, `groq`, `openrouter`, `cerebras`, `together`, and `deepseek`. See [provider details](docs/PROVIDERS.md).
 
 Never publish or share this file.
 
@@ -120,8 +125,8 @@ Uses the available tools to perform supported computer operations.
 | Command | Description |
 |---|---|
 | `/providers` | Lists supported providers. |
-| `/provider groq` | Selects Groq Cloud. |
-| `/provider ollama` | Selects Ollama Cloud. |
+| `/provider <name>` | Selects any configured cloud provider. |
+| `/tasks` | Lists recent task checkpoints. |
 | `/agents` | Retrieves available models. |
 | `/models` | Alternative model catalog command. |
 | `/agent <number or id>` | Selects a model. |
@@ -143,6 +148,10 @@ Uses the available tools to perform supported computer operations.
 | `/clear` | Clears the terminal. |
 | `/exit` | Exits NEXUS. |
 
+## Task Recovery
+
+NEXUS writes JSON checkpoints to `nexus_tasks/`. Use `/tasks` to inspect recent task status and recorded actions. The journal does not automatically replay clicks, typing, PowerShell commands, or file writes after interruption. Review the computer's current state before continuing a task. See [Task Recovery](docs/TASK_RECOVERY.md).
+
 ## Workspace
 
 NEXUS supports selecting a working directory for project-related tasks.
@@ -155,7 +164,7 @@ Example:
 
 The selected directory must already exist.
 
-The workspace remains active for the current process only.
+The workspace remains active for the current process only. Task checkpoints preserve the workspace path for review.
 
 If no workspace is selected, the dedicated text-file writer uses the Windows Desktop by default.
 
