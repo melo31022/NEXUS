@@ -110,4 +110,5 @@ def get_provider(name: str) -> ProviderConfig:
     try:
         return PROVIDERS[name.lower()]
     except KeyError as exc:
-        raise ValueError(f"Provedor em nuvem desconhecido: {name}. Disponíveis: {", ".join(sorted(PROVIDERS))}.") from exc
+        available = ", ".join(sorted(PROVIDERS))
+        raise ValueError(f"Provedor em nuvem desconhecido: {name}. Disponíveis: {available}.") from exc
