@@ -316,7 +316,7 @@ class NexusSession:
                 return
             try:
                 updated = config.save_provider_settings(name, api_key=value)
-                console.print(f"[green]Chave salva com proteção do Windows para {updated.label}.[/green]")
+                console.print(f"[green]Chave salva no armazenamento seguro para {updated.label}.[/green]")
             except Exception as exc:
                 console.print(f"[red]Não foi possível salvar a chave: {type(exc).__name__}: {exc}[/red]")
         elif action in {"remove", "delete", "clear"}:
@@ -326,7 +326,10 @@ class NexusSession:
                 return
             try:
                 config.save_provider_settings(name, api_key="")
-                console.print(f"[green]Chave salva removida de {current.label}.[/green]")
+                console.print(f"[green]Chave salva removida do armazenamento seguro de {current.label}.[/green]")
+                import os
+                if current.api_key_env and os.environ.get(current.api_key_env):
+                    console.print("[yellow]Aviso: ainda existe uma variável de ambiente/.env para esse provedor. Ela poderá ser carregada novamente na próxima inicialização; remova essa variável manualmente se quiser apagar também essa cópia.[/yellow]")
             except Exception as exc:
                 console.print(f"[red]Não foi possível remover a chave: {type(exc).__name__}: {exc}[/red]")
         else:
