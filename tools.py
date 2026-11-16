@@ -311,6 +311,19 @@ class DesktopTools:
             raise OSError("A abertura de aplicativos desta ferramenta está disponível no Windows.")
         # Resolve common Windows apps explicitly; System32 is not guaranteed to be
         # present in PATH on every Windows installation.
+        title_hints = {
+            "notepad.exe": ("bloco de notas", "notepad"),
+            "calc.exe": ("calculadora", "calculator"),
+            "explorer.exe": ("explorador de arquivos", "file explorer"),
+        }
+        for window in gw.getAllWindows():
+            title = (window.title or "").strip()
+            if title and any(hint in title.casefold() for hint in title_hints.get(target.casefold(), ())):
+                try:
+                    window.activate()
+                    return f"Aplicativo já estava aberto e a janela foi ativada: {title}."
+                except Exception:
+                    break
         system_root = Path(os.environ.get("SystemRoot", r"C:\\Windows"))
         system_apps = {"notepad.exe", "calc.exe", "explorer.exe"}
         if target.casefold() in system_apps:
