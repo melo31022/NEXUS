@@ -3,29 +3,34 @@
 ## 1.1.0 — 2026-11-16
 
 ### Added
-- Lightweight Token Guard with conservative token estimation, history compaction, configurable context/output budgets, and per-step tool-call limits.
-- Persistent task journals with atomic checkpoints, progress/action records, and a `/tasks` history command.
+- Lightweight Token Guard with heuristic token estimation, conversation compaction, configurable context/output budgets, and tool-call limits.
+- Persistent task journals with atomic checkpoints, progress/action records, workspace persistence, credential redaction, and the `/tasks` command.
 - Expanded desktop controls: right-click, double-click, bounded scrolling, and window activation by title.
-- Safe recovery policy: uncertain desktop actions are never replayed automatically; only read-only actions are marked retry-safe for review.
-- Bounded transient-request retries with Retry-After support and sanitized HTTP error details.
+- Bounded transient-request retries with `Retry-After` support and sanitized HTTP error details.
 - Additional cloud provider configurations: OpenRouter, Cerebras, Together AI, and DeepSeek, alongside Groq Cloud and Ollama Cloud.
+- Provider and task-recovery documentation.
 - Regression tests for token budgeting, checkpoint persistence/redaction, and provider retry behavior.
-- New runtime settings in `.env.example` for token budgets and tool-call limits.
+- GitHub Actions workflow for unit tests and Python compilation.
 
 ### Improved
-- API-key environment variable names are now provider-configured instead of hard-coded for only Groq and Ollama.
+- Provider API-key environment variables are configured per provider.
 - Task checkpoint arguments/results redact common credential fields.
-- Terminal status and version branding updated to 1.1.
+- Terminal status, command help, and version branding updated to 1.1.
 
 ### Validation status
-- 19 automated unit tests passed in GitHub Actions (Ubuntu, Python 3.11); Python compileall also passed.
+- 19 automated unit tests passed in GitHub Actions on Ubuntu with Python 3.11.
+- Python `compileall` passed.
 - Windows ARM64 acceptance testing has not yet been performed.
-- Live authentication, model catalog, tool calling, and vision compatibility for each provider remain provider/model-specific acceptance tests.
+- Live provider authentication, model catalogs, tool calling, and vision remain provider/model-specific acceptance tests.
 - Windows desktop automation and screenshots require manual validation on Windows.
 
+### Known limitations
+- Token counts are heuristic estimates, not exact provider tokenization.
+- Task recovery records state but intentionally does not automatically replay desktop actions or file-changing operations.
+- Additional providers use OpenAI-compatible conventions where applicable; feature parity is not guaranteed.
+- A complete GUI redesign is not included in this release line.
+
 ## 1.0.0 — 2026-11-15
-
-
 
 ### Added
 - Automatic interface-language detection from Windows/user locale.
