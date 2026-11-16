@@ -110,7 +110,7 @@ class NexusAgent:
         system_prompt = self.agent_profile["system"] + f"\nIdioma preferencial da interface: {self.language}. Detecte o idioma natural da mensagem mais recente do usuário e responda no mesmo idioma. Se não for possível inferir (por exemplo, uma mensagem muito curta), use o idioma preferencial da interface. Se o usuário pedir explicitamente outro idioma, siga o pedido.\n"
         if mode_name == "operator":
             system_prompt += (
-                "\nFerramentas disponíveis: mouse, clique, digitação, teclado, screenshot, janelas, "
+                "\nFerramentas disponíveis: mouse, cliques esquerdo/direito/duplo, rolagem, digitação, teclado, foco de janelas, screenshot, janelas, "
                 "abertura de aplicativos, criação de arquivos de texto no workspace e PowerShell. "
                 "Para criar arquivos .txt, use sempre write_text_file; não use PowerShell ou Notepad para gravar o conteúdo. "
                 "Se criar ou identificar a pasta principal de um projeto, use set_workspace com o caminho absoluto antes de criar os arquivos nela. "
