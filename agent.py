@@ -60,6 +60,10 @@ MODES: dict[str, dict[str, Any]] = {
 TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "mouse_move", "description": "Move o cursor para coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
     {"type": "function", "function": {"name": "left_click", "description": "Executa um clique esquerdo em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "right_click", "description": "Executa um clique direito em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "double_click", "description": "Executa um duplo clique esquerdo em coordenadas da tela.", "parameters": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}}},
+    {"type": "function", "function": {"name": "scroll", "description": "Rola a página em até 20 linhas; x e y opcionais definem a posição.", "parameters": {"type": "object", "properties": {"amount": {"type": "integer"}, "x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["amount"]}}},
+    {"type": "function", "function": {"name": "activate_window", "description": "Tenta trazer para frente uma janela cujo título contenha o texto informado.", "parameters": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}}},
     {"type": "function", "function": {"name": "type_text", "description": "Digita texto no campo que estiver em foco.", "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}}},
     {"type": "function", "function": {"name": "press_key", "description": "Pressiona uma tecla, como enter, tab ou esc.", "parameters": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}}},
     {"type": "function", "function": {"name": "key_combination", "description": "Pressiona uma combinação de teclas, como ctrl+c.", "parameters": {"type": "object", "properties": {"keys": {"type": "array", "items": {"type": "string"}}}, "required": ["keys"]}}},
@@ -227,6 +231,10 @@ class NexusAgent:
         mapping = {
             "mouse_move": DesktopTools.mouse_move,
             "left_click": DesktopTools.left_click,
+            "right_click": DesktopTools.right_click,
+            "double_click": DesktopTools.double_click,
+            "scroll": DesktopTools.scroll,
+            "activate_window": DesktopTools.activate_window,
             "type_text": DesktopTools.type_text,
             "press_key": DesktopTools.press_key,
             "key_combination": DesktopTools.key_combination,
