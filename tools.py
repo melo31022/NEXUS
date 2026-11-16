@@ -167,6 +167,37 @@ class DesktopTools:
         return f"Arquivo criado em: {destination} ({len(content)} caracteres)."
 
     @staticmethod
+    def list_directory(path: str = "", limit: int = 100) -> str:
+        """List one directory without invoking a shell or changing files."""
+        raw_path = str(path or "").strip().strip('"')
+        target = Path(raw_path).expanduser() if raw_path else DesktopTools._desktop_directory()
+        if not target.is_absolute():
+            target = Path.cwd() / target
+        target = target.resolve()
+        if not target.exists():
+            return f"A pasta não existe: {target}"
+        if not target.is_dir():
+            return f"O caminho informado não é uma pasta: {target}"
+        limit = max(1, min(int(limit), 200))
+        try:
+            entries = sorted(target.iterdir(), key=lambda item: (not item.is_dir(), item.name.casefold()))
+        except OSError as exc:
+            return f"Não foi possível listar a pasta: {type(exc).__name__}: {exc}"
+        if not entries:
+            return f"Pasta vazia: {target}"
+        lines = [f"Conteúdo de: {target}"]
+        for item in entries[:limit]:
+            try:
+                kind = "PASTA" if item.is_dir() else "ARQUIVO"
+                size = "" if item.is_dir() else f" • {item.stat().st_size} bytes"
+                lines.append(f"- [{kind}] {item.name}{size}")
+            except OSError:
+                lines.append(f"- [INDISPONÍVEL] {item.name}")
+        if len(entries) > limit:
+            lines.append(f"... mais {len(entries) - limit} itens omitidos (limite {limit}).")
+        return "\\n".join(lines)
+
+    @staticmethod
     def screen_info() -> dict[str, Any]:
         """Return measured display dimensions and foreground-window metadata."""
         width, height = pyautogui.size()
@@ -266,21 +297,48 @@ class DesktopTools:
         aliases = {
             "notepad": "notepad.exe",
             "notepad.exe": "notepad.exe",
+            "bloco de notas": "notepad.exe",
             "calculator": "calc.exe",
             "calc": "calc.exe",
             "calc.exe": "calc.exe",
+            "calculadora": "calc.exe",
             "explorer": "explorer.exe",
             "explorer.exe": "explorer.exe",
+            "explorador de arquivos": "explorer.exe",
         }
-        target = aliases.get(target.lower(), target)
+        target = aliases.get(target.casefold(), target)
         if os.name != "nt":
             raise OSError("A abertura de aplicativos desta ferramenta está disponível no Windows.")
-        # Do not invoke a shell: treat the supplied value as one executable/path.
-        executable = shutil.which(target) or target
+        # Resolve common Windows apps explicitly; System32 is not guaranteed to be
+        # present in PATH on every Windows installation.
+        system_root = Path(os.environ.get("SystemRoot", r"C:\\Windows"))
+        system_apps = {"notepad.exe", "calc.exe", "explorer.exe"}
+        if target.casefold() in system_apps:
+            system_candidate = system_root / "System32" / target
+            executable = str(system_candidate) if system_candidate.is_file() else (shutil.which(target) or target)
+        else:
+            executable = shutil.which(target) or target
         if not Path(executable).exists() and not shutil.which(executable):
             raise FileNotFoundError(f"Aplicativo/caminho não encontrado: {target}")
-        subprocess.Popen([executable], close_fds=True)
-        return f"Solicitação de abertura enviada: {target}. Verifique a janela para confirmar."
+        before = {getattr(window, "_hWnd", None) for window in gw.getAllWindows()}
+        process = subprocess.Popen([executable], close_fds=True)
+        # Give the Windows shell/app a moment to create or activate its window.
+        deadline = time.monotonic() + 5.0
+        focused_title = ""
+        while time.monotonic() < deadline:
+            windows = gw.getAllWindows()
+            new_windows = [window for window in windows if getattr(window, "_hWnd", None) not in before and (window.title or "").strip()]
+            if new_windows:
+                try:
+                    new_windows[-1].activate()
+                    focused_title = (new_windows[-1].title or "").strip()
+                except Exception:
+                    pass
+                break
+            time.sleep(0.25)
+        if focused_title:
+            return f"Aplicativo aberto e janela ativada: {focused_title}. O campo/janela está pronto para interação."
+        return f"Solicitação de abertura enviada para {target} (PID {process.pid}). Se a janela não aparecer, consulte as janelas abertas."
 
     @staticmethod
     def powershell_execute(command: str) -> str:
