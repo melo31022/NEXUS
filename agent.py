@@ -74,7 +74,7 @@ TOOLS_SCHEMA = [
     {"type": "function", "function": {"name": "list_windows", "description": "Lista títulos das janelas abertas no Windows. Use apenas quando precisar localizar uma janela existente; após open_application, a janela normalmente já é ativada.", "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {"name": "get_active_window", "description": "Obtém pela API do Windows a janela em primeiro plano, seu título, PID e posição real na tela.", "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {"name": "get_screen_info", "description": "Obtém a resolução real da tela e os metadados da janela ativa.", "parameters": {"type": "object", "properties": {}}}},
-    {"type": "function", "function": {"name": "open_application", "description": "Abre um aplicativo ou caminho executável do Windows.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
+    {"type": "function", "function": {"name": "open_application", "description": "Abre um aplicativo ou caminho executável do Windows. Opcionalmente, informe text para digitar no aplicativo assim que a janela abrir e receber foco; use isso quando o usuário pedir para abrir um app e escrever algo.", "parameters": {"type": "object", "properties": {"path": {"type": "string"}, "text": {"type": "string"}}, "required": ["path"]}}},
     {"type": "function", "function": {"name": "powershell_execute", "description": "Executa um comando no PowerShell do Windows. Comandos potencialmente destrutivos exigem confirmação local.", "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}}},
 ]
 
@@ -121,7 +121,8 @@ class NexusAgent:
                 "Mantenha contexto entre mensagens da sessão. "
                 "Preserve quebras de linha reais no conteúdo; não escreva sequências literais \\n. "
                 "Para listar arquivos e pastas, use list_directory; nunca use PowerShell para uma listagem simples. "
-                "Para tarefas curtas de interface (por exemplo, abrir um aplicativo e digitar texto), emita as chamadas ordenadas open_application e type_text no mesmo lote quando possível. "
+                "Para 'abrir um aplicativo e escrever texto', use open_application com path e text opcionais na mesma chamada; isso abre a janela e digita o texto sem uma segunda rodada da IA. "
+                "Para outras tarefas curtas de interface, emita chamadas ordenadas no mesmo lote quando possível. "
                 "open_application já tenta ativar a janela; não chame list_windows ou activate_window depois, a menos que a abertura falhe ou a janela não esteja pronta. "
                 "Use mouse_move e left_click/right_click/double_click para interagir com controles visuais; se as coordenadas não forem conhecidas, faça screenshot primeiro e use a resolução/metadados para localizar o controle. "
                 "Não substitua interação visual solicitada por explicações textuais. "
@@ -234,6 +235,15 @@ class NexusAgent:
                 filename=arguments.get("filename", ""),
                 include_image=self.vision_enabled,
             )
+        if name == "open_application":
+            opened = DesktopTools.open_application(path=arguments.get("path", ""))
+            text_to_type = arguments.get("text")
+            if text_to_type is not None:
+                if not isinstance(text_to_type, str):
+                    return "Erro: o texto opcional precisa ser uma string."
+                typed = DesktopTools.type_text(text=text_to_type)
+                return f"{opened}\n{typed}"
+            return opened
         if name == "powershell_execute":
             command = str(arguments.get("command", ""))
             if command_needs_confirmation(command) and not self._confirm_risky_command(command):
