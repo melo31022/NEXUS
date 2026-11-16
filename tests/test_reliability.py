@@ -1,9 +1,12 @@
 import tempfile
+import copy
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 
 import requests
 
+import config
 from providers import request_with_retry, sanitized_api_error
 from task_recovery import TaskJournal, resumable_actions
 from token_guard import compact_messages, estimate_messages_tokens
@@ -47,6 +50,35 @@ class TaskRecoveryTests(unittest.TestCase):
             record = TaskJournal.recent(Path(temp))[0]
             self.assertEqual([a["name"] for a in resumable_actions(record)], ["get_screen_info"])
 
+
+
+class ProviderSettingsTests(unittest.TestCase):
+    def test_provider_key_model_and_endpoint_can_be_saved(self):
+        original_providers = config.PROVIDERS.copy()
+        original_settings = copy.deepcopy(config._SAVED_SETTINGS)
+        try:
+            with patch("config.save_secure_settings") as save:
+                updated = config.save_provider_settings(
+                    "groq",
+                    api_key="test-secret-value",
+                    model="openai/gpt-oss-120b",
+                    base_url="https://api.groq.com/openai/v1",
+                )
+                self.assertEqual(updated.api_key, "test-secret-value")
+                self.assertEqual(updated.default_model, "openai/gpt-oss-120b")
+                self.assertEqual(updated.normalized_base_url(), "https://api.groq.com/openai/v1")
+                save.assert_called_once()
+        finally:
+            config.PROVIDERS.clear()
+            config.PROVIDERS.update(original_providers)
+            config._SAVED_SETTINGS.clear()
+            config._SAVED_SETTINGS.update(original_settings)
+
+    def test_insecure_endpoint_is_rejected(self):
+        with patch("config.save_secure_settings") as save:
+            with self.assertRaises(ValueError):
+                config.save_provider_settings("groq", base_url="http://example.invalid/v1")
+            save.assert_not_called()
 
 class ProviderRetryTests(unittest.TestCase):
     def test_retry_after_header_is_honored(self):
