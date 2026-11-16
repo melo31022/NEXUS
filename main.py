@@ -21,6 +21,7 @@ import config
 from agent import MODES, NexusAgent
 from catalog import extract_model_ids
 from i18n import detect_language, language_name, tr
+from task_recovery import TaskJournal
 
 console = Console()
 BASE_DIR = Path(__file__).resolve().parent
@@ -119,7 +120,7 @@ class NexusSession:
             Align.center(f"[bold white]{tr('tagline', self.language).upper()}[/bold white]\n[dim]{tr('subtitle', self.language)}[/dim]"),
             border_style="bright_blue", padding=(1, 4),
             title=f"[bold cyan]{tr('welcome', self.language)}[/bold cyan]",
-            subtitle="[dim]NEXUS 1.0 • Cloud AI • Windows[/dim]",
+            subtitle="[dim]NEXUS 1.1 • Cloud AI • Windows[/dim]",
         )
         console.print("\n", Align.center(intro))
         guide = (
@@ -175,6 +176,7 @@ class NexusSession:
             ("/language auto|pt|en", tr("language_command", self.language)),
             ("/workspace [folder|off]", tr("cmd_workspace", self.language)),
             ("/status", tr("cmd_status", self.language)),
+            ("/tasks", "Lista tarefas recentes e checkpoints salvos; retomada exige revisão."),
             ("/clear", tr("cmd_clear", self.language)),
             ("/help", tr("cmd_help", self.language)),
             ("/exit", tr("cmd_exit", self.language)),
@@ -287,7 +289,7 @@ class NexusSession:
             self.show_providers()
         elif command == "/provider":
             if argument.lower() not in config.PROVIDERS:
-                console.print("[yellow]Use /provider ollama ou /provider groq. Apenas provedores em nuvem são aceitos.[/yellow]")
+                console.print("[yellow]Use /providers para ver os provedores em nuvem disponíveis.[/yellow]")
             else:
                 self.provider_name = argument.lower()
                 self.model = self.provider.default_model
@@ -295,6 +297,20 @@ class NexusSession:
                 self.vision_enabled = False
                 self.reset_conversation()
                 console.print(f"[green]Provedor selecionado: {self.provider.label} • modelo padrão: {self.model}[/green]")
+        elif command == "/tasks":
+            recent = TaskJournal.recent(limit=8)
+            if not recent:
+                console.print("[dim]Nenhum checkpoint de tarefa encontrado.[/dim]")
+            else:
+                table = Table(title="Tarefas recentes • checkpoints", header_style="bold cyan")
+                table.add_column("ID")
+                table.add_column("Estado")
+                table.add_column("Etapa")
+                table.add_column("Objetivo")
+                for item in recent:
+                    table.add_row(str(item.get("task_id", ""))[:8], str(item.get("status", "")), str(item.get("step", 0)), str(item.get("goal", ""))[:90])
+                console.print(table)
+                console.print("[dim]Ações de computador não são repetidas automaticamente. Revise o checkpoint antes de iniciar uma nova execução.[/dim]")
         elif command == "/vision":
             value = argument.lower()
             if value in {"on", "ativar", "1"}:
