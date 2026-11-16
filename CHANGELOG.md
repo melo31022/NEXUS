@@ -5,6 +5,7 @@
 ### Added
 - Lightweight Token Guard with conservative token estimation, history compaction, configurable context/output budgets, and per-step tool-call limits.
 - Persistent task journals with atomic checkpoints, progress/action records, and a `/tasks` history command.
+- Expanded desktop controls: right-click, double-click, bounded scrolling, and window activation by title.
 - Safe recovery policy: uncertain desktop actions are never replayed automatically; only read-only actions are marked retry-safe for review.
 - Bounded transient-request retries with Retry-After support and sanitized HTTP error details.
 - Additional cloud provider configurations: OpenRouter, Cerebras, Together AI, and DeepSeek, alongside Groq Cloud and Ollama Cloud.
@@ -17,7 +18,8 @@
 - Terminal status and version branding updated to 1.1.
 
 ### Validation status
-- Automated tests are included but have not yet been executed in a Windows ARM64 environment.
+- 19 automated unit tests passed in GitHub Actions (Ubuntu, Python 3.11); Python compileall also passed.
+- Windows ARM64 acceptance testing has not yet been performed.
 - Live authentication, model catalog, tool calling, and vision compatibility for each provider remain provider/model-specific acceptance tests.
 - Windows desktop automation and screenshots require manual validation on Windows.
 
