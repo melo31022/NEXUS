@@ -3,6 +3,9 @@
 ## 1.1.0 — 2026-11-16
 
 ### Added
+- Interactive CMD provider setup with hidden API-key entry, endpoint/model configuration, and /test connection verification.
+- Windows DPAPI-encrypted per-user settings storage; .env remains supported for backward compatibility.
+- /key status|set|remove and /endpoint commands for provider credential and endpoint management.
 - Lightweight Token Guard with heuristic token estimation, conversation compaction, configurable context/output budgets, and tool-call limits.
 - Persistent task journals with atomic checkpoints, progress/action records, workspace persistence, credential redaction, and the `/tasks` command.
 - Expanded desktop controls: right-click, double-click, bounded scrolling, and window activation by title.
@@ -18,9 +21,9 @@
 - Terminal status, command help, and version branding updated to 1.1.
 
 ### Validation status
-- 19 automated unit tests passed in GitHub Actions on Ubuntu with Python 3.11.
+- 22 automated unit tests passed in GitHub Actions on Ubuntu with Python 3.11.
 - Python `compileall` passed.
-- Windows ARM64 acceptance testing has not yet been performed.
+- CMD credential setup is implemented but DPAPI storage has not yet been manually validated on Windows 10/11 ARM64.
 - Live provider authentication, model catalogs, tool calling, and vision remain provider/model-specific acceptance tests.
 - Windows desktop automation and screenshots require manual validation on Windows.
 
