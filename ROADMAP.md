@@ -63,12 +63,12 @@ Improve continuity when tasks are interrupted.
 
 Improve interaction with the Windows desktop.
 
-- [ ] Reliable mouse movement.
-- [ ] Left and right mouse clicks.
-- [ ] Keyboard typing.
-- [ ] Keyboard shortcuts.
-- [ ] Multi-step desktop interaction.
-- [ ] Improved Operator integration.
+- [x] Reliable mouse movement with coordinate validation (existing implementation retained).
+- [x] Left and right mouse clicks.
+- [x] Keyboard typing (existing implementation retained).
+- [x] Keyboard shortcuts (existing implementation retained).
+- [x] Multi-step desktop interaction through the Operator tool loop.
+- [x] Expanded Operator tools for right/double click, scrolling, and window activation.
 - [ ] Immediate task interruption.
 - [ ] Verify actions after execution.
 - [ ] Improve handling of active windows.
